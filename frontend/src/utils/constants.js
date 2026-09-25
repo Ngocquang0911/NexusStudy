@@ -1,0 +1,3 @@
+export const APP_NAME = 'NEXUS STUDY'
+export const WORKSPACE_TYPES = ['COURSE', 'PROJECT', 'THESIS', 'STUDY_GROUP', 'CLUB']
+export const TASK_STATUSES = ['TODO', 'IN_PROGRESS', 'DONE']

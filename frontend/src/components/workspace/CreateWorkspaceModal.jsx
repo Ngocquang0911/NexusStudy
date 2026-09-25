@@ -1,0 +1,8 @@
+import { X } from 'lucide-react'
+import { useForm } from 'react-hook-form'
+import { WORKSPACE_TYPES } from '../../utils/constants.js'
+
+export default function CreateWorkspaceModal({ onClose, onSubmit, submitting, error }) {
+  const { register, handleSubmit, formState: { errors } } = useForm({ defaultValues: { type: 'PROJECT' } })
+  return <div className="modal-backdrop" role="presentation" onMouseDown={onClose}><form className="workspace-modal" onSubmit={handleSubmit(onSubmit)} onMouseDown={(event) => event.stopPropagation()}><div className="modal-top"><div><span className="eyebrow">NEW WORKSPACE</span><h2>Bring your group together</h2></div><button type="button" className="modal-close" onClick={onClose} aria-label="Close"><X size={18} /></button></div><label>Workspace name<input autoFocus {...register('name', { required: 'Name is required' })} placeholder="e.g. Software Engineering thesis" />{errors.name && <small className="field-error">{errors.name.message}</small>}</label><label>Description<textarea {...register('description')} placeholder="What is this workspace for?" rows="3" /></label><label>Workspace type<select {...register('type')}>{WORKSPACE_TYPES.map((type) => <option key={type} value={type}>{type.replace('_', ' ')}</option>)}</select></label>{error && <p className="form-error" role="alert">{error}</p>}<div className="modal-actions"><button type="button" className="secondary-action" onClick={onClose}>Cancel</button><button className="primary-action" type="submit" disabled={submitting}>{submitting ? 'Creating...' : 'Create workspace'}</button></div></form></div>
+}
