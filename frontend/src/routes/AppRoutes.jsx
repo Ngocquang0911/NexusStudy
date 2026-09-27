@@ -2,9 +2,10 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import PlaceholderPage from '../components/common/PlaceholderPage.jsx'
 import AppLayout from '../layouts/AppLayout.jsx'
 import AIAssistantPage from '../pages/ai/AIAssistantPage.jsx'
+import AdminPage from '../pages/admin/AdminPage.jsx'
 import CalendarPage from '../pages/calendar/CalendarPage.jsx'
 import ChatPage from '../pages/chat/ChatPage.jsx'
-import DashboardPage from '../pages/dashboard/DashboardPage.jsx'
+import DashboardRoute from './DashboardRoute.jsx'
 import DocumentsPage from '../pages/document/DocumentsPage.jsx'
 import EvaluationPage from '../pages/evaluation/EvaluationPage.jsx'
 import LoginPage from '../pages/auth/LoginPage.jsx'
@@ -15,6 +16,7 @@ import TaskPage from '../pages/task/TaskPage.jsx'
 import WorkspaceDetailPage from '../pages/workspace/WorkspaceDetailPage.jsx'
 import WorkspaceListPage from '../pages/workspace/WorkspaceListPage.jsx'
 import ProtectedRoute from './ProtectedRoute.jsx'
+import AdminRoute from './AdminRoute.jsx'
 import PublicRoute from './PublicRoute.jsx'
 
 export default function AppRoutes() {
@@ -27,7 +29,10 @@ export default function AppRoutes() {
 
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route element={<AdminRoute />}>
+            <Route path="/admin" element={<AdminPage />} />
+          </Route>
+          <Route path="/dashboard" element={<DashboardRoute />} />
           <Route path="/workspaces" element={<WorkspaceListPage />} />
           <Route path="/workspaces/:workspaceId" element={<WorkspaceDetailPage />} />
           <Route path="/workspaces/:workspaceId/tasks" element={<TaskPage />} />
