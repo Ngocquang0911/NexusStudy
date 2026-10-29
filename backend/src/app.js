@@ -1,5 +1,3 @@
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import cors from 'cors'
 import express from 'express'
 import { env } from './config/env.js'
@@ -12,17 +10,14 @@ import evaluationRoutes from './modules/evaluations/evaluation.routes.js'
 import aiRoutes from './modules/ai/ai.routes.js'
 import pollRoutes from './modules/polls/poll.routes.js'
 import taskRoutes from './modules/tasks/task.routes.js'
+import notificationRoutes from './modules/notifications/notification.routes.js'
 import workspaceRoutes from './modules/workspaces/workspace.routes.js'
-
-const uploadsDir = fileURLToPath(new URL('../uploads', import.meta.url))
 
 export function createApp() {
   const app = express()
 
   app.use(cors({ origin: env.clientUrl }))
   app.use(express.json())
-  app.use('/uploads', express.static(uploadsDir))
-
   app.get('/api/health', (_request, response) => {
     response.json({
       success: true,
@@ -44,6 +39,7 @@ export function createApp() {
   app.use('/api', pollRoutes)
   app.use('/api/workspaces', workspaceRoutes)
   app.use('/api', taskRoutes)
+  app.use('/api', notificationRoutes)
 
   app.use(notFoundHandler)
   app.use(errorHandler)

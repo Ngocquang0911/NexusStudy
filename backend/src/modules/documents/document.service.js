@@ -2,6 +2,7 @@ import { unlink } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Document } from './Document.js'
+import { getUserPlan, PLAN_LIMITS } from '../plans/plan.service.js'
 
 function documentError(message, statusCode) {
   const error = new Error(message)
@@ -17,9 +18,25 @@ function storedFilePath(fileUrl) {
   return fileURLToPath(new URL(`../../../uploads/${path.basename(fileUrl)}`, import.meta.url))
 }
 
+export async function removeStoredDocuments(documents) {
+  for (const document of documents) {
+    if (document.isLink) continue
+    try {
+      await unlink(storedFilePath(document.fileUrl))
+    } catch (error) {
+      if (error.code === 'ENOENT') continue
+      const cleanupError = documentError(`Unable to remove stored document ${document.fileUrl}`, 500)
+      cleanupError.code = 'DOCUMENT_CLEANUP_FAILED'
+      cleanupError.cause = error
+      throw cleanupError
+    }
+  }
+}
+
 export async function createDocument(workspaceId, userId, file) {
   if (!file) throw documentError('A file is required', 400)
   try {
+    const plan = await getUserPlan(userId)
     return await Document.create({
       workspaceId,
       uploadedBy: userId,
@@ -27,6 +44,7 @@ export async function createDocument(workspaceId, userId, file) {
       fileUrl: `/uploads/${file.filename}`,
       fileType: file.mimetype,
       fileSize: file.size,
+      expiresAt: new Date(Date.now() + PLAN_LIMITS[plan].documentRetentionDays * 24 * 60 * 60 * 1000),
     })
   } catch (error) {
     await unlink(file.path).catch(() => {})
@@ -41,6 +59,7 @@ export async function createLinkDocument(workspaceId, userId, payload) {
   if (!/^https?:\/\//i.test(url)) {
     url = `https://${url}`
   }
+  const plan = await getUserPlan(userId)
   return await Document.create({
     workspaceId,
     uploadedBy: userId,
@@ -49,11 +68,14 @@ export async function createLinkDocument(workspaceId, userId, payload) {
     fileType: 'link',
     fileSize: 0,
     isLink: true,
+    expiresAt: new Date(Date.now() + PLAN_LIMITS[plan].documentRetentionDays * 24 * 60 * 60 * 1000),
   })
 }
 
 export async function listDocuments(workspaceId) {
-  return Document.find({ workspaceId }).populate('uploadedBy', 'name email avatar').sort({ createdAt: -1 })
+  return Document.find({ workspaceId, $or: [{ expiresAt: { $gt: new Date() } }, { expiresAt: null }] })
+    .populate('uploadedBy', 'name email avatar')
+    .sort({ createdAt: -1 })
 }
 
 export async function getDocument(document) {
@@ -63,5 +85,11 @@ export async function getDocument(document) {
 export async function deleteDocument(document, userId, member) {
   if (!canManageDocument(document, userId, member)) throw documentError('Only the uploader or workspace leader can delete this document', 403)
   await Document.deleteOne({ _id: document._id })
-  await unlink(storedFilePath(document.fileUrl)).catch(() => {})
+  if (!document.isLink) {
+    try {
+      await unlink(storedFilePath(document.fileUrl))
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error
+    }
+  }
 }

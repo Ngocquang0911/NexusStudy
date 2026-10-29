@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from '../components/layout/Sidebar.jsx'
 import Topbar from '../components/layout/Topbar.jsx'
+import './app-shell.css'
 
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)

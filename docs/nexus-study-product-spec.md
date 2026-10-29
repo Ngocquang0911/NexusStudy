@@ -4,6 +4,13 @@
 **Audience:** Product, UX, frontend, backend, QA, and academic supervisors  
 **Primary stack:** React, Tailwind CSS or React Bootstrap, Node.js, Express.js, MongoDB, JWT
 
+## Subscription entitlement scope
+
+- Workspace-count limits are evaluated against each user's own subscription.
+- Workspace-wide capabilities such as additional channels and pinned-item capacity follow the workspace owner's plan; a Premium member does not upgrade a Free-owned workspace.
+- Account capabilities such as AI assistance, custom reminders, contribution reports, and uploaded-file retention follow the acting account's plan. File expiry is recorded when uploaded and is not recalculated after a plan change.
+- Deleting a workspace removes its members, tasks, channels and messages, polls, evaluations, notifications, document metadata, and stored document files.
+
 ## 1. Product Vision
 
 NEXUS STUDY is a focused digital workspace where university students can organize group learning and project work in one place: communicate, assign and complete work, manage deadlines, make group decisions, and review contribution fairly. Its AI assistant supports understanding and revision using workspace materials; it does not replace student judgment or authorship.
@@ -98,10 +105,10 @@ Runs several projects or events. Needs separate workspaces with consistent roles
 
 - FR-24: Create, edit, archive, and view tasks.
 - FR-25: Assign a task to one or more workspace members.
-- FR-26: Set status (`TODO`, `DOING`, `DONE`), priority, description, due date, and attachments.
-- FR-27: Move tasks between Kanban columns.
+- FR-26: Set status (`TODO`, `IN_PROGRESS`, `REVIEW`, `CANCELLED`, `DONE`), priority, description, due date, and attachments. `OVERDUE` is derived when an unfinished task's due date has passed; it is not a manually editable status.
+- FR-27: Move tasks between To Do, In Progress, Review, Cancel, and Finish Kanban columns. Overdue tasks remain in the derived Overdue column until their due date or status changes.
 - FR-28: Filter tasks by status, assignee, priority, and due date.
-- FR-29: Calculate workspace progress as completed tasks divided by total active tasks, with the formula displayed consistently in the UI.
+- FR-29: Calculate workspace progress as completed tasks divided by total active tasks, excluding cancelled tasks, with the formula displayed consistently in the UI.
 - FR-30: Calculate member task progress from assigned active tasks; label it as task-based activity, not a quality score.
 - FR-31: Keep an audit history for task status and assignment changes.
 

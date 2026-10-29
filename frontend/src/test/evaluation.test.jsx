@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
 import EvaluationForm from '../components/evaluation/EvaluationForm.jsx'
+import ContributionReport from '../components/evaluation/ContributionReport.jsx'
 
 describe('Peer Evaluation Module', () => {
   const sampleMembers = [
@@ -30,5 +31,33 @@ describe('Peer Evaluation Module', () => {
 
     expect(screen.getByText('Alice Smith')).toBeInTheDocument()
     expect(screen.getByText('Bob Johnson')).toBeInTheDocument()
+  })
+
+  test('shows task outcomes and allows leaders to export completed-period reports', () => {
+    render(
+      <ContributionReport
+        isLeader
+        reportData={{
+          period: '2026-06',
+          evaluationCount: 1,
+          members: [{
+            user: { _id: 'u2', name: 'Alice Smith' },
+            averageScore: 4,
+            contributionScore: 80,
+            evaluationCount: 1,
+            scoreByCriterion: {},
+            taskOutcomes: [
+              { title: 'Finish on schedule', outcome: 'ON_TIME' },
+              { title: 'Missed deadline', outcome: 'OVERDUE' },
+            ],
+          }],
+        }}
+      />
+    )
+
+    expect(screen.getByText('Finish on schedule')).toBeInTheDocument()
+    expect(screen.getByText('ON TIME')).toBeInTheDocument()
+    expect(screen.getByText('OVERDUE')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Export CSV' })).toBeInTheDocument()
   })
 })

@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 import { Document } from '../modules/documents/Document.js'
-import { WorkspaceMember } from '../modules/workspaces/WorkspaceMember.js'
+import { findActiveWorkspaceMember } from './workspace.middleware.js'
 
 export async function requireDocumentMember(request, _response, next) {
   try {
@@ -16,8 +16,13 @@ export async function requireDocumentMember(request, _response, next) {
       error.statusCode = 404
       return next(error)
     }
+    if (document.expiresAt && document.expiresAt <= new Date()) {
+      const error = new Error('This document has expired and is no longer available')
+      error.statusCode = 410
+      return next(error)
+    }
 
-    const member = await WorkspaceMember.findOne({ workspaceId: document.workspaceId, userId: request.auth.userId })
+    const member = await findActiveWorkspaceMember(document.workspaceId, request.auth.userId)
     if (!member) {
       const error = new Error('Workspace membership required')
       error.statusCode = 403

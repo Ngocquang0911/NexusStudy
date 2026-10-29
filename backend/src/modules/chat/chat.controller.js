@@ -21,7 +21,7 @@ async function handle(request, response, next, action, message, statusCode = 200
 }
 
 export function getChannels(request, response, next) {
-  return handle(request, response, next, () => listChannels(request.params.workspaceId), 'Channels retrieved')
+  return handle(request, response, next, () => listChannels(request.params.workspaceId, request.auth.userId), 'Channels retrieved')
 }
 
 export function create(request, response, next) {

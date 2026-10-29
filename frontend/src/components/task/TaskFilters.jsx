@@ -1,4 +1,5 @@
 import { Filter, Search, X } from 'lucide-react'
+import { TASK_BOARD_STATUSES, TASK_STATUS_LABELS } from '../../utils/taskStatus.js'
 
 export default function TaskFilters({ filters, setFilters, members = [], currentUserId }) {
   const handleChange = (field, value) => {
@@ -93,9 +94,9 @@ export default function TaskFilters({ filters, setFilters, members = [], current
             <Filter size={14} className="select-icon" />
             <select value={filters.status} onChange={(e) => handleChange('status', e.target.value)}>
               <option value="ALL">Status: All</option>
-              <option value="TODO">To Do</option>
-              <option value="IN_PROGRESS">In Progress</option>
-              <option value="DONE">Done</option>
+              {TASK_BOARD_STATUSES.map((status) => (
+                <option key={status} value={status}>{TASK_STATUS_LABELS[status]}</option>
+              ))}
             </select>
           </div>
 

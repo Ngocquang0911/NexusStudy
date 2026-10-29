@@ -7,6 +7,7 @@ const channelSchema = new mongoose.Schema(
     description: { type: String, default: '', maxlength: 300 },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     isPrivate: { type: Boolean, default: false },
+    allowedMembers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   },
   { timestamps: true },
 )

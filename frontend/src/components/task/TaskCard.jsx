@@ -1,8 +1,10 @@
-import { Calendar, CheckCircle2, Clock, MoreVertical, Pencil, Trash2, User } from 'lucide-react'
+import { Calendar, Clock, MoreVertical, Pencil, Trash2, User } from 'lucide-react'
 import { useState } from 'react'
 import { formatDate } from '../../utils/formatDate.js'
+import { TASK_STATUSES } from '../../utils/constants.js'
+import { getTaskBoardStatus, isTaskDueSoon, TASK_STATUS_LABELS } from '../../utils/taskStatus.js'
 
-export default function TaskCard({ task, onEdit, onDelete, onStatusChange, currentUserId, userRole }) {
+export default function TaskCard({ task, onEdit, onDelete, onStatusChange, currentUserId, userRole, now }) {
   const [showMenu, setShowMenu] = useState(false)
 
   const isLeader = ['OWNER', 'LEADER'].includes(userRole)
@@ -23,14 +25,12 @@ export default function TaskCard({ task, onEdit, onDelete, onStatusChange, curre
       default:
         return <span className="priority-tag low">{priority}</span>
     }
+
   }
 
-  const isOverdue = task.deadline && new Date(task.deadline) < new Date() && task.status !== 'DONE'
-  const isDueSoon =
-    task.deadline &&
-    !isOverdue &&
-    task.status !== 'DONE' &&
-    new Date(task.deadline).getTime() - new Date().getTime() < 48 * 60 * 60 * 1000
+  const boardStatus = getTaskBoardStatus(task, now)
+  const isOverdue = boardStatus === 'OVERDUE'
+  const isDueSoon = isTaskDueSoon(task, now)
 
   const handleDragStart = (e) => {
     e.dataTransfer.setData('taskId', task._id)
@@ -39,15 +39,15 @@ export default function TaskCard({ task, onEdit, onDelete, onStatusChange, curre
 
   return (
     <div
-      className={`task-card ${task.status.toLowerCase()} ${isOverdue ? 'overdue' : ''}`}
+      className={`task-card ${boardStatus.toLowerCase()}`}
       draggable
       onDragStart={handleDragStart}
     >
       <div className="task-card-header">
         <div className="task-badges">
           {getPriorityBadge(task.priority)}
-          <span className={`status-badge ${task.status.toLowerCase()}`}>
-            {task.status.replace('_', ' ')}
+          <span className={`status-badge ${boardStatus.toLowerCase()}`}>
+            {TASK_STATUS_LABELS[boardStatus] || boardStatus}
           </span>
         </div>
         <div className="task-menu-wrapper">
@@ -86,39 +86,25 @@ export default function TaskCard({ task, onEdit, onDelete, onStatusChange, curre
               )}
               <div className="menu-divider" />
               <div className="menu-label">Move status:</div>
-              {task.status !== 'TODO' && (
+              {TASK_STATUSES.filter((status) => status !== task.status).map((status) => (
                 <button
+                  key={status}
                   type="button"
                   onClick={() => {
                     setShowMenu(false)
-                    onStatusChange(task._id, 'TODO', 0)
+                    const progress = status === 'DONE'
+                      ? 100
+                      : status === 'TODO'
+                        ? 0
+                        : status === 'IN_PROGRESS'
+                          ? Math.max(task.progress, 25)
+                          : task.progress
+                    onStatusChange(task._id, status, progress)
                   }}
                 >
-                  Move to TODO
+                  Move to {TASK_STATUS_LABELS[status]}
                 </button>
-              )}
-              {task.status !== 'IN_PROGRESS' && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMenu(false)
-                    onStatusChange(task._id, 'IN_PROGRESS', Math.max(task.progress, 25))
-                  }}
-                >
-                  Move to IN PROGRESS
-                </button>
-              )}
-              {task.status !== 'DONE' && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMenu(false)
-                    onStatusChange(task._id, 'DONE', 100)
-                  }}
-                >
-                  Mark DONE
-                </button>
-              )}
+              ))}
             </div>
           )}
         </div>
@@ -135,7 +121,7 @@ export default function TaskCard({ task, onEdit, onDelete, onStatusChange, curre
         </div>
         <div className="task-progress-bar-bg">
           <div
-            className={`task-progress-bar-fill ${task.status.toLowerCase()}`}
+            className={`task-progress-bar-fill ${boardStatus.toLowerCase()}`}
             style={{ width: `${task.progress}%` }}
           />
         </div>

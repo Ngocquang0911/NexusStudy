@@ -1,0 +1,28 @@
+Backend chịu trách nhiệm xử lý logic nghiệp vụ, xác thực quyền truy cập, tương tác với cơ sở dữ liệu và cung cấp dữ liệu cho frontend.
+
+Frontend chịu trách nhiệm hiển thị giao diện và xử lý các thao tác mà người dùng thực hiện trên trang web.
+
+1 . BACKEND
+-Node.js & Express.js :Xử lý logic nghiệp vụ và các API RESTful.
+Quản lý không gian làm việc, tác vụ, trò chuyện và các gói đăng ký.
+-Socket.io (Server-side):Cho phép nhắn tin và nhận thông báo theo thời gian thực.
+Tổ chức trao đổi thông tin theo không gian làm việc và kênh.
+-Security & Authentication:JWT: Xác thực người dùng.
+bcryptjs: mã hóa mật khẩu một cách an toàn.
+RBAC Middleware: Kiểm soát quyền truy cập dựa trên vai trò người dùng.
+-MongoDB & Mongoose:Lưu trữ người dùng, không gian làm việc, tác vụ, tin nhắn và tài liệu.
+Cung cấp các cấu trúc dữ liệu linh hoạt cùng tính năng kiểm chứng lược đồ (schema validation).
+-Multer & Nodemailer:Multer: Xử lý việc tải lên tài liệu.
+Nodemailer: Gửi email xác minh và các thông báo nhắc nhở về thời hạn.
+2. FRONTEND
+-React 19 & Vite 6:Xây dựng ứng dụng trang đơn (SPA) nhanh chóng và có tính tương tác cao.
+Hỗ trợ các thành phần có thể tái sử dụng cùng quy trình phát triển hiệu quả.
+-Tailwind CSS & Lucide React:Tạo ra các giao diện người dùng linh hoạt và nhất quán.
+Cung cấp các biểu tượng rõ ràng và hiện đại.
+-React Router v7:Quản lý việc điều hướng trang và các tuyến đường được bảo vệ.
+Kiểm soát quyền truy cập vào các trang trong không gian làm việc dựa trên vai trò người dùng.
+-Axios & React Hook Form:Axios: Kết nối giao diện người dùng (frontend) với các API phía máy chủ (backend).
+React Hook Form: Xử lý các biểu mẫu và kiểm tra tính hợp lệ của dữ liệu đầu vào.
+-Socket.IO Client:Cho phép nhắn tin và nhận thông báo theo thời gian thực.
+Cập nhật tức thì các nội dung trò chuyện, chỉ báo đang nhập tin nhắn và kết quả thăm dò ý kiến.
+

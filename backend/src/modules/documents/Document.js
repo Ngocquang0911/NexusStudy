@@ -9,6 +9,7 @@ const documentSchema = new mongoose.Schema(
     fileType: { type: String, required: true },
     fileSize: { type: Number, required: true, min: 0, default: 0 },
     isLink: { type: Boolean, default: false },
+    expiresAt: { type: Date, required: true, index: true },
   },
   { timestamps: { createdAt: true, updatedAt: false } },
 )

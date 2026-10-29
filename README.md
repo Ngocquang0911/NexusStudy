@@ -1,55 +1,58 @@
 # NEXUS STUDY
 
-NEXUS STUDY is a student learning and collaboration platform for group projects, thesis work, study groups, deadlines, tasks, polls, peer evaluation, and document-grounded AI assistance.
+NEXUS STUDY is a collaboration platform for student workspaces, group projects, tasks, chat, documents, polls, peer evaluation, and AI-assisted study.
 
 ## Project structure
 
 ```text
-NEXUS-STUDY/
-├── frontend/
-│   ├── public/
-│   └── src/
-│       ├── assets/
-│       ├── components/
-│       ├── pages/
-│       ├── layouts/
-│       ├── services/
-│       ├── hooks/
-│       ├── context/
-│       ├── utils/
-│       ├── routes/
-│       ├── App.jsx
-│       └── main.jsx
-├── backend/
-│   ├── src/
-│   │   ├── config/
-│   │   ├── models/
-│   │   ├── controllers/
-│   │   ├── services/
-│   │   ├── routes/
-│   │   ├── middleware/
-│   │   ├── utils/
-│   │   ├── validators/
-│   │   ├── db.js
-│   │   └── server.js
-│   ├── .env
-│   ├── .gitignore
-│   └── package.json
-├── docs/
-└── package.json
+frontend/src/
+  components/  Reusable UI
+  context/     Authentication context
+  hooks/       Shared React hooks
+  layouts/     Application shell
+  pages/       Route-level screens
+  routes/      Route and access guards
+  services/    API clients
+  utils/       Shared helpers
+
+backend/src/
+  config/      Environment and database setup
+  jobs/        Scheduled reminders and retention work
+  middleware/  Authentication, authorization, and request processing
+  modules/     Feature routes, controllers, services, and models
+
+docs/
+  nexus-study-product-spec.md
+  technology-tools-description.md
+  use-cases.md
 ```
+
+The frontend follows a single page → component → service flow. The backend groups related routes, controllers, services, and models by feature under `modules/`.
 
 ## Run locally
 
+Install dependencies from the repository root:
+
 ```bash
 npm install
+```
+
+Configure MongoDB and backend environment variables using [backend/.env.example](backend/.env.example). Then start the frontend and backend:
+
+```bash
 npm run dev
 ```
 
-The frontend runs at `http://localhost:5173` and the API runs at `http://localhost:4000`.
+- Web app: `http://localhost:5173`
+- Backend API: `http://localhost:5000`
 
-## Current slice
+To start one workspace only, run `npm run dev --workspace frontend` or `npm run dev --workspace backend`. `npm start` starts the backend and requires a valid `JWT_SECRET` and a reachable MongoDB database.
 
-The first vertical slice includes the responsive workspace dashboard, task filtering, quick task creation, deadline summary, recent messages, and the study assistant entry point. The API currently exposes `/api/health` and a demo workspace endpoint.
+## Verify changes
 
-MongoDB, authentication, workspace persistence, and domain modules will be added incrementally according to the MVP roadmap in `docs/nexus-study-product-spec.md`.
+```bash
+npm test
+npm run build
+```
+
+`npm test` runs the backend Node.js test suite followed by the frontend Vitest suite. Product behavior and role-based use cases are documented in [docs/use-cases.md](docs/use-cases.md).

@@ -12,10 +12,15 @@ export default function KanbanColumn({
   onQuickAdd,
   currentUserId,
   userRole,
+  now,
 }) {
   const [isDragOver, setIsDragOver] = useState(false)
 
   const handleDragOver = (e) => {
+    if (status === 'OVERDUE') {
+      e.dataTransfer.dropEffect = 'none'
+      return
+    }
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
     if (!isDragOver) setIsDragOver(true)
@@ -28,9 +33,11 @@ export default function KanbanColumn({
   const handleDrop = (e) => {
     e.preventDefault()
     setIsDragOver(false)
+    if (status === 'OVERDUE') return
     const taskId = e.dataTransfer.getData('taskId')
     if (taskId) {
-      let defaultProgress = 0
+      let defaultProgress
+      if (status === 'TODO') defaultProgress = 0
       if (status === 'IN_PROGRESS') defaultProgress = 50
       if (status === 'DONE') defaultProgress = 100
       onStatusChange(taskId, status, defaultProgress)
@@ -50,14 +57,16 @@ export default function KanbanColumn({
           <h3>{title}</h3>
           <span className="task-count-pill">{tasks.length}</span>
         </div>
-        <button
-          type="button"
-          className="quick-add-icon-btn"
-          onClick={() => onQuickAdd(status)}
-          title={`Add ${title} task`}
-        >
-          <Plus size={16} />
-        </button>
+        {status !== 'OVERDUE' && (
+          <button
+            type="button"
+            className="quick-add-icon-btn"
+            onClick={() => onQuickAdd(status)}
+            title={`Add ${title} task`}
+          >
+            <Plus size={16} />
+          </button>
+        )}
       </div>
 
       <div className="kanban-column-body">
@@ -70,6 +79,7 @@ export default function KanbanColumn({
             onStatusChange={onStatusChange}
             currentUserId={currentUserId}
             userRole={userRole}
+            now={now}
           />
         ))}
 
@@ -80,13 +90,15 @@ export default function KanbanColumn({
         )}
       </div>
 
-      <button
-        type="button"
-        className="column-quick-add-btn"
-        onClick={() => onQuickAdd(status)}
-      >
-        <Plus size={16} /> Add Task
-      </button>
+      {status !== 'OVERDUE' && (
+        <button
+          type="button"
+          className="column-quick-add-btn"
+          onClick={() => onQuickAdd(status)}
+        >
+          <Plus size={16} /> Add Task
+        </button>
+      )}
     </div>
   )
 }

@@ -1,8 +1,18 @@
-import { createContext, useEffect, useState } from 'react'
-import { getCurrentUser, login as loginRequest, register as registerRequest } from '../services/authService.js'
+import { createContext, useContext, useEffect, useState } from 'react'
+import {
+	getCurrentUser,
+	login as loginRequest,
+	register as registerRequest,
+	resendVerification as resendVerificationRequest,
+	verifyEmail as verifyEmailRequest,
+} from '../services/authService.js'
 import { clearToken, getToken, setRefreshToken, setToken } from '../utils/storage.js'
 
 export const AuthContext = createContext(null)
+
+export function useAuth() {
+	return useContext(AuthContext)
+}
 
 export function AuthProvider({ children }) {
 	const [user, setUser] = useState(null)
@@ -41,9 +51,11 @@ export function AuthProvider({ children }) {
 	}
 
 	async function login(credentials) { return authenticate(loginRequest(credentials)) }
-	async function register(details) { return authenticate(registerRequest(details)) }
+	async function register(details) { return registerRequest(details) }
+	async function verifyEmail(details) { return authenticate(verifyEmailRequest(details)) }
+	async function resendVerification(email) { return resendVerificationRequest(email) }
 	function logout() { clearToken(); setUser(null); setAccessToken(null) }
 	function updateUser(newUser) { setUser(newUser) }
 
-	return <AuthContext.Provider value={{ user, token, isAuthenticated: Boolean(user && token), loading, login, register, logout, updateUser }}>{children}</AuthContext.Provider>
+	return <AuthContext.Provider value={{ user, token, isAuthenticated: Boolean(user && token), loading, login, register, verifyEmail, resendVerification, logout, updateUser }}>{children}</AuthContext.Provider>
 }

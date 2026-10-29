@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { listTasks } from '../../services/taskService.js'
 import { listWorkspaces } from '../../services/workspaceService.js'
 import { formatDate } from '../../utils/formatDate.js'
+import { getTaskBoardStatus, TASK_STATUS_LABELS } from '../../utils/taskStatus.js'
 
 export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -202,7 +203,7 @@ export default function CalendarPage() {
                     </div>
                     <h4 className="agenda-task-title">{task.title}</h4>
                     <div className="agenda-task-bottom">
-                      <span className={`status-badge ${task.status.toLowerCase()}`}>{task.status.replace('_', ' ')}</span>
+                      <span className={`status-badge ${getTaskBoardStatus(task).toLowerCase()}`}>{TASK_STATUS_LABELS[getTaskBoardStatus(task)]}</span>
                       <span className="task-progress-num">{task.progress}% done</span>
                     </div>
                   </div>

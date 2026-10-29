@@ -1,11 +1,13 @@
 import {
   assignTask,
+  addTaskFeedback,
   createTask,
   deleteTask,
   getTask,
   getWorkspaceProgress,
   listTasks,
   updateTask,
+  updateTaskReminders,
   updateTaskStatus,
 } from './task.service.js'
 
@@ -38,8 +40,16 @@ export function updateStatus(request, response, next) {
   return handle(request, response, next, () => updateTaskStatus(request.task, request.auth.userId, request.workspaceMember, request.body.status, request.body.progress), 'Task status updated')
 }
 
+export function updateReminders(request, response, next) {
+  return handle(request, response, next, () => updateTaskReminders(request.task, request.auth.userId, request.workspaceMember, request.body.reminders), 'Task reminders updated')
+}
+
 export function assign(request, response, next) {
-  return handle(request, response, next, () => assignTask(request.task, request.workspaceMember, request.body.assignedTo), 'Task assigned')
+  return handle(request, response, next, () => assignTask(request.task, request.auth.userId, request.workspaceMember, request.body.assignedTo), 'Task assigned')
+}
+
+export function createFeedback(request, response, next) {
+  return handle(request, response, next, () => addTaskFeedback(request.task, request.auth.userId, request.body), 'Task feedback added', 201)
 }
 
 export function remove(request, response, next) {

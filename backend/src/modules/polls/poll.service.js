@@ -17,7 +17,7 @@ function formatPoll(poll, userId) {
   const userVote = poll.votes.find((vote) => vote.userId.equals(userId))
   return {
     ...poll.toJSON(),
-    status: poll.isClosed ? 'CLOSED' : expired ? 'EXPIRED' : 'OPEN',
+    status: expired ? 'EXPIRED' : poll.isClosed ? 'CLOSED' : 'OPEN',
     options: poll.options.map((option) => ({
       id: option._id,
       label: option.label,
@@ -66,8 +66,25 @@ export async function votePoll(poll, userId, optionId) {
   const option = poll.options.id(optionId)
   if (!option) throw pollError('Poll option not found', 404)
   if (poll.votes.some((vote) => vote.userId.equals(userId))) throw pollError('User has already voted in this poll', 409)
-  poll.votes.push({ userId, optionId: option._id })
-  const savedPoll = await poll.save()
+  const savedPoll = await Poll.findOneAndUpdate(
+    {
+      _id: poll._id,
+      isClosed: false,
+      expiresAt: { $gt: new Date() },
+      votes: { $not: { $elemMatch: { userId } } },
+    },
+    { $push: { votes: { userId, optionId: option._id, votedAt: new Date() } } },
+    { new: true },
+  )
+  if (!savedPoll) {
+    const currentPoll = await Poll.findById(poll._id)
+    if (!currentPoll) throw pollError('Poll not found', 404)
+    if (currentPoll.isClosed || currentPoll.expiresAt <= new Date()) throw pollError('Poll is closed or expired', 409)
+    if (currentPoll.votes.some((vote) => vote.userId.equals(userId))) {
+      throw pollError('User has already voted in this poll', 409)
+    }
+    throw pollError('Poll could not be updated; please try again', 409)
+  }
   return formatPoll(savedPoll, userId)
 }
 

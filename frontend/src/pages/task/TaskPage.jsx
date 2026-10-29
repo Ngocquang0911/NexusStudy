@@ -1,6 +1,6 @@
 import { ArrowLeft, CheckCircle2, ListTodo, LoaderCircle, Plus, Sparkles } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import KanbanBoard from '../../components/task/KanbanBoard.jsx'
 import TaskFilters from '../../components/task/TaskFilters.jsx'
 import TaskModal from '../../components/task/TaskModal.jsx'
@@ -8,14 +8,18 @@ import useAuth from '../../hooks/useAuth.js'
 import {
   createTask,
   deleteTask,
+  addTaskFeedback,
   listTasks,
   updateTask,
+  updateTaskReminders,
   updateTaskStatus,
 } from '../../services/taskService.js'
 import { getWorkspace, getWorkspaceMembers, listWorkspaces } from '../../services/workspaceService.js'
+import { getTaskBoardStatus, isTaskDueSoon } from '../../utils/taskStatus.js'
 
 export default function TaskPage() {
   const params = useParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const workspaceId = params.workspaceId
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -33,6 +37,7 @@ export default function TaskPage() {
   const [editingTask, setEditingTask] = useState(null)
   const [modalLoading, setModalLoading] = useState(false)
   const [defaultStatus, setDefaultStatus] = useState('TODO')
+  const [now, setNow] = useState(() => new Date())
 
   // Filter states
   const [filters, setFilters] = useState({
@@ -91,9 +96,30 @@ export default function TaskPage() {
     loadWorkspaceData()
   }, [loadWorkspaceData])
 
+  useEffect(() => {
+    const taskId = searchParams.get('taskId')
+    if (!taskId || !tasks.length) return
+    const targetTask = tasks.find((task) => task._id === taskId)
+    if (!targetTask) return
+    setEditingTask(targetTask)
+    setIsModalOpen(true)
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.delete('taskId')
+    setSearchParams(nextParams, { replace: true })
+  }, [searchParams, setSearchParams, tasks])
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60_000)
+    return () => clearInterval(timer)
+  }, [])
+
   const currentMember = members.find((m) => (m.userId?._id || m.userId) === user?._id)
   const userRole = currentMember?.role || 'MEMBER'
   const isLeader = ['OWNER', 'LEADER'].includes(userRole)
+  const editingCreatorId = typeof editingTask?.createdBy === 'object'
+    ? editingTask.createdBy?._id
+    : editingTask?.createdBy
+  const canManageReminders = isLeader || !editingTask || editingCreatorId === user?._id
 
   // Handle task modal actions
   const handleOpenCreateModal = (status = 'TODO') => {
@@ -110,16 +136,38 @@ export default function TaskPage() {
   const handleSaveTask = async (formPayload) => {
     setModalLoading(true)
     try {
+      const { reminders, ...taskPayload } = formPayload
+      let taskId
       if (editingTask) {
-        await updateTask(editingTask._id, formPayload)
+        await updateTask(editingTask._id, taskPayload)
+        taskId = editingTask._id
       } else {
-        await createTask({ ...formPayload, workspaceId: activeWsId })
+        const { data } = await createTask({ ...taskPayload, workspaceId: activeWsId })
+        taskId = data.data._id
+      }
+      if (canManageReminders && user?.subscriptionPlan === 'PREMIUM' && taskPayload.deadline) {
+        await updateTaskReminders(taskId, reminders)
       }
       await loadWorkspaceData()
       setIsModalOpen(false)
+    } catch (error) {
+      await loadWorkspaceData()
+      throw error
     } finally {
       setModalLoading(false)
     }
+  }
+
+  const handleAddFeedback = async (taskId, payload) => {
+    const { data } = await addTaskFeedback(taskId, payload)
+    setEditingTask((current) => current?._id === taskId
+      ? {
+          ...current,
+          feedback: [...(current.feedback || []), data.data.feedback],
+          history: [...(current.history || []), data.data.activity],
+        }
+      : current)
+    await loadWorkspaceData()
   }
 
   const handleDeleteTask = async (taskId) => {
@@ -168,7 +216,7 @@ export default function TaskPage() {
       return false
     }
     // Status filter
-    if (filters.status !== 'ALL' && task.status !== filters.status) {
+    if (filters.status !== 'ALL' && getTaskBoardStatus(task, now) !== filters.status) {
       return false
     }
     // Priority filter
@@ -184,9 +232,7 @@ export default function TaskPage() {
     }
     // Preset filters
     if (filters.preset === 'DUE_SOON') {
-      if (!task.deadline || task.status === 'DONE') return false
-      const diffMs = new Date(task.deadline).getTime() - new Date().getTime()
-      if (diffMs < 0 || diffMs > 48 * 60 * 60 * 1000) return false
+      if (!isTaskDueSoon(task, now)) return false
     }
 
     return true
@@ -194,10 +240,11 @@ export default function TaskPage() {
 
   // Calculate statistics
   const totalTasksCount = tasks.length
+  const activeTasks = tasks.filter((task) => task.status !== 'CANCELLED')
   const completedTasksCount = tasks.filter((t) => t.status === 'DONE').length
   const inProgressTasksCount = tasks.filter((t) => t.status === 'IN_PROGRESS').length
-  const overallProgress = totalTasksCount
-    ? Math.round(tasks.reduce((sum, t) => sum + (t.progress || 0), 0) / totalTasksCount)
+  const overallProgress = activeTasks.length
+    ? Math.round((completedTasksCount / activeTasks.length) * 100)
     : 0
 
   return (
@@ -296,7 +343,7 @@ export default function TaskPage() {
         <div className="stat-divider" />
         <div className="stat-pill">
           <span className="stat-num text-green">{completedTasksCount}</span>
-          <span className="stat-label">Completed</span>
+          <span className="stat-label">Finished</span>
         </div>
         <div className="stat-divider" />
         <div className="stat-progress-pill">
@@ -342,6 +389,7 @@ export default function TaskPage() {
           onQuickAdd={handleOpenCreateModal}
           currentUserId={user?._id}
           userRole={userRole}
+          now={now}
         />
       )}
 
@@ -357,7 +405,11 @@ export default function TaskPage() {
         }
         workspaceMembers={members}
         isLeader={isLeader}
+        canManageReminders={canManageReminders}
+        isPremium={user?.subscriptionPlan === 'PREMIUM'}
         loading={modalLoading}
+        currentUserId={user?._id}
+        onAddFeedback={handleAddFeedback}
       />
     </div>
   )

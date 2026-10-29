@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 import { Document } from '../modules/documents/Document.js'
-import { WorkspaceMember } from '../modules/workspaces/WorkspaceMember.js'
+import { findActiveWorkspaceMember } from './workspace.middleware.js'
 
 export async function requireAiWorkspaceMember(request, _response, next) {
   try {
@@ -10,7 +10,7 @@ export async function requireAiWorkspaceMember(request, _response, next) {
       error.statusCode = 400
       return next(error)
     }
-    const member = await WorkspaceMember.findOne({ workspaceId, userId: request.auth.userId })
+    const member = await findActiveWorkspaceMember(workspaceId, request.auth.userId)
     if (!member) {
       const error = new Error('Workspace membership required')
       error.statusCode = 403
@@ -32,7 +32,16 @@ export async function validateAiDocuments(request, _response, next) {
       error.statusCode = 400
       return next(error)
     }
-    const documents = await Document.find({ _id: { $in: documentIds }, workspaceId: request.aiWorkspaceId }).select('_id')
+    if (documentIds.length > 10) {
+      const error = new Error('Select no more than 10 documents per AI request')
+      error.statusCode = 400
+      return next(error)
+    }
+    const documents = await Document.find({
+      _id: { $in: documentIds },
+      workspaceId: request.aiWorkspaceId,
+      expiresAt: { $gt: new Date() },
+    }).select('_id')
     if (documents.length !== documentIds.length) {
       const error = new Error('One or more documents are not accessible in this workspace')
       error.statusCode = 403

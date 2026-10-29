@@ -165,11 +165,18 @@ export default function ChatPage() {
       }
     }
 
+    const handleWorkspaceDeleted = ({ workspaceId }) => {
+      if (workspaceId === activeWsId) {
+        navigate('/workspaces', { replace: true, state: { notice: 'This Space was deleted by its owner.' } })
+      }
+    }
+
     socket.on('receiveMessage', handleReceiveMessage)
     socket.on('typing', handleTyping)
     socket.on('stopTyping', handleStopTyping)
     socket.on('messagePinned', handleMessagePinned)
     socket.on('channelRead', handleChannelRead)
+    socket.on('workspaceDeleted', handleWorkspaceDeleted)
 
     return () => {
       socket.off('receiveMessage', handleReceiveMessage)
@@ -177,8 +184,9 @@ export default function ChatPage() {
       socket.off('stopTyping', handleStopTyping)
       socket.off('messagePinned', handleMessagePinned)
       socket.off('channelRead', handleChannelRead)
+      socket.off('workspaceDeleted', handleWorkspaceDeleted)
     }
-  }, [socket, isConnected, activeWsId, activeChannel?._id, user?._id])
+  }, [socket, isConnected, activeWsId, activeChannel?._id, user?._id, navigate])
 
   // USER ACTIONS
   const handleSelectChannel = (channel) => {
@@ -246,19 +254,28 @@ export default function ChatPage() {
   }
 
   const handlePinMessage = async (messageId) => {
-    if (socket && isConnected) {
-      socket.emit('pinMessage', { messageId }, (res) => {
-        if (res?.success && res.data) {
-          setMessages((prev) => prev.map((m) => (m._id === messageId ? res.data : m)))
-        } else {
-          togglePinMessage(messageId).then(({ data }) => {
-            setMessages((prev) => prev.map((m) => (m._id === messageId ? data.data : m)))
-          })
-        }
-      })
-    } else {
-      const { data } = await togglePinMessage(messageId)
-      setMessages((prev) => prev.map((m) => (m._id === messageId ? data.data : m)))
+    try {
+      if (socket && isConnected) {
+        socket.emit('pinMessage', { messageId }, async (res) => {
+          try {
+            if (res?.success && res.data) {
+              setMessages((prev) => prev.map((m) => (m._id === messageId ? res.data : m)))
+            } else if (res?.message) {
+              setError(res.message)
+            } else {
+              const { data } = await togglePinMessage(messageId)
+              setMessages((prev) => prev.map((m) => (m._id === messageId ? data.data : m)))
+            }
+          } catch (requestError) {
+            setError(requestError.response?.data?.message || 'Unable to update pinned message')
+          }
+        })
+      } else {
+        const { data } = await togglePinMessage(messageId)
+        setMessages((prev) => prev.map((m) => (m._id === messageId ? data.data : m)))
+      }
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Unable to update pinned message')
     }
   }
 
@@ -359,6 +376,7 @@ export default function ChatPage() {
             onSelectChannel={handleSelectChannel}
             onOpenCreateModal={() => setIsCreateChannelOpen(true)}
             isLeader={isLeader}
+            canCreateChannel={workspace?.plan === 'PREMIUM'}
           />
 
           {/* Main Channel Discussion Area */}
@@ -437,6 +455,7 @@ export default function ChatPage() {
         isOpen={isCreateChannelOpen}
         onClose={() => setIsCreateChannelOpen(false)}
         onSubmit={handleCreateChannelSubmit}
+        members={members}
         loading={createChannelLoading}
       />
 

@@ -1,4 +1,7 @@
-import 'dotenv/config'
+import dotenv from 'dotenv'
+import { fileURLToPath } from 'node:url'
+
+dotenv.config({ path: fileURLToPath(new URL('../../.env', import.meta.url)) })
 
 function requireEnvironment(name, fallback) {
   const value = process.env[name] || fallback
@@ -21,4 +24,10 @@ export const env = {
   aiApiKey: process.env.AI_API_KEY || '',
   aiBaseUrl: process.env.AI_BASE_URL || 'https://api.openai.com/v1',
   aiModel: process.env.AI_MODEL || 'gpt-4o-mini',
+  smtpHost: process.env.SMTP_HOST || '',
+  smtpPort: Number(process.env.SMTP_PORT || 587),
+  smtpSecure: process.env.SMTP_SECURE === 'true',
+  smtpUser: process.env.SMTP_USER || '',
+  smtpPassword: process.env.SMTP_PASSWORD || '',
+  smtpFrom: process.env.SMTP_FROM || process.env.SMTP_USER || '',
 }

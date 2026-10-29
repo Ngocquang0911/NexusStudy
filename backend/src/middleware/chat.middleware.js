@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 import { Channel } from '../modules/chat/Channel.js'
 import { Message } from '../modules/chat/Message.js'
-import { WorkspaceMember } from '../modules/workspaces/WorkspaceMember.js'
+import { findActiveWorkspaceMember } from './workspace.middleware.js'
 
 export async function requireChannelMember(request, _response, next) {
   try {
@@ -19,9 +19,14 @@ export async function requireChannelMember(request, _response, next) {
       return next(error)
     }
 
-    const member = await WorkspaceMember.findOne({ workspaceId: channel.workspaceId, userId: request.auth.userId })
+    const member = await findActiveWorkspaceMember(channel.workspaceId, request.auth.userId)
     if (!member) {
       const error = new Error('Workspace membership required')
+      error.statusCode = 403
+      return next(error)
+    }
+    if (channel.isPrivate && !channel.allowedMembers?.some((id) => id.equals(request.auth.userId)) && !channel.createdBy.equals(request.auth.userId)) {
+      const error = new Error('Private channel membership required')
       error.statusCode = 403
       return next(error)
     }
@@ -49,9 +54,15 @@ export async function requireMessageMember(request, _response, next) {
       return next(error)
     }
 
-    const member = await WorkspaceMember.findOne({ workspaceId: message.workspaceId, userId: request.auth.userId })
+    const member = await findActiveWorkspaceMember(message.workspaceId, request.auth.userId)
     if (!member) {
       const error = new Error('Workspace membership required')
+      error.statusCode = 403
+      return next(error)
+    }
+    const channel = await Channel.findById(message.channelId).select('isPrivate allowedMembers createdBy')
+    if (channel?.isPrivate && !channel.allowedMembers?.some((id) => id.equals(request.auth.userId)) && !channel.createdBy.equals(request.auth.userId)) {
+      const error = new Error('Private channel membership required')
       error.statusCode = 403
       return next(error)
     }

@@ -1,5 +1,8 @@
 import { Evaluation } from './Evaluation.js'
 import { WorkspaceMember } from '../workspaces/WorkspaceMember.js'
+import { assertPremiumUser } from '../plans/plan.service.js'
+import { Task } from '../tasks/Task.js'
+import { Notification } from '../notifications/Notification.js'
 
 function evaluationError(message, statusCode) {
   const error = new Error(message)
@@ -28,6 +31,28 @@ function ensurePeriodEnded(evaluations) {
   if (periodEndsAt && periodEndsAt > new Date()) throw evaluationError('Evaluation results are private until the period ends', 403)
 }
 
+function currentEvaluationPeriod(now = new Date()) {
+  const year = now.getUTCFullYear()
+  const month = now.getUTCMonth()
+  return {
+    period: `${year}-${String(month + 1).padStart(2, '0')}`,
+    periodEndsAt: new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999)),
+  }
+}
+
+function completedEvaluationPeriod(now = new Date()) {
+  const year = now.getUTCFullYear()
+  const month = now.getUTCMonth() - 1
+  const periodDate = new Date(Date.UTC(year, month, 1))
+  const periodYear = periodDate.getUTCFullYear()
+  const periodMonth = periodDate.getUTCMonth()
+  return {
+    period: `${periodYear}-${String(periodMonth + 1).padStart(2, '0')}`,
+    periodStartsAt: new Date(Date.UTC(periodYear, periodMonth, 1)),
+    periodEndsAt: new Date(Date.UTC(periodYear, periodMonth + 1, 0, 23, 59, 59, 999)),
+  }
+}
+
 async function ensureWorkspaceMember(workspaceId, userId) {
   const member = await WorkspaceMember.findOne({ workspaceId, userId })
   if (!member) throw evaluationError('Evaluated user must belong to the workspace', 400)
@@ -36,45 +61,100 @@ async function ensureWorkspaceMember(workspaceId, userId) {
 export async function createEvaluation(workspaceId, evaluatorId, payload) {
   if (evaluatorId.toString() === payload.evaluatedUserId?.toString()) throw evaluationError('Self-evaluation is not enabled', 400)
   await ensureWorkspaceMember(workspaceId, payload.evaluatedUserId)
-  const periodEndsAt = new Date(payload.periodEndsAt)
-  if (Number.isNaN(periodEndsAt.getTime())) throw evaluationError('A valid periodEndsAt is required', 400)
+  const { period, periodEndsAt } = currentEvaluationPeriod()
   const criteria = normalizeCriteria(payload.criteria)
   try {
-    return await Evaluation.create({
+    const evaluation = await Evaluation.create({
       workspaceId,
       evaluatorId,
       evaluatedUserId: payload.evaluatedUserId,
-      period: payload.period || 'current',
+      period,
       periodEndsAt,
       criteria,
       comment: payload.comment || '',
       score: average(criteria.map(({ score }) => score)),
     })
+    await Notification.findOneAndUpdate(
+      { userId: payload.evaluatedUserId, reminderKey: `evaluation:${evaluation._id}` },
+      {
+        $setOnInsert: {
+          workspaceId,
+          taskId: null,
+          type: 'EVALUATION_AVAILABLE',
+          title: 'New peer feedback received',
+          message: 'A teammate submitted feedback for you. Results will be available after the evaluation period ends.',
+        },
+      },
+      { upsert: true, new: true },
+    )
+    return evaluation
   } catch (error) {
     if (error.code === 11000) throw evaluationError('You have already evaluated this member for this period', 409)
     throw error
   }
 }
 
-export async function listEvaluations(workspaceId, member) {
-  const evaluations = await Evaluation.find({ workspaceId }).populate('evaluatorId', 'name email').populate('evaluatedUserId', 'name email').sort({ createdAt: -1 })
-  if (!evaluations.length) return []
+export async function listEvaluations(workspaceId, userId, member) {
   if (!['OWNER', 'LEADER'].includes(member.role)) throw evaluationError('Only workspace leaders can view evaluation data', 403)
-  return evaluations
+  await assertPremiumUser(userId, 'Contribution reports require a Premium plan')
+  const { period } = completedEvaluationPeriod()
+  return Evaluation.find({ workspaceId, period }).populate('evaluatorId', 'name email').populate('evaluatedUserId', 'name email').sort({ createdAt: -1 })
 }
 
 export async function listMyEvaluations(workspaceId, evaluatorId) {
-  return Evaluation.find({ workspaceId, evaluatorId }).populate('evaluatedUserId', 'name email').sort({ createdAt: -1 })
+  const { period } = currentEvaluationPeriod()
+  return Evaluation.find({ workspaceId, evaluatorId, period }).populate('evaluatedUserId', 'name email').sort({ createdAt: -1 })
 }
 
-export async function getReport(workspaceId) {
-  const evaluations = await Evaluation.find({ workspaceId }).populate('evaluatedUserId', 'name email')
-  if (!evaluations.length) return { members: [], evaluationCount: 0 }
+export async function getReport(workspaceId, userId, member) {
+  if (!['OWNER', 'LEADER'].includes(member.role)) throw evaluationError('Only workspace leaders can view evaluation reports', 403)
+  await assertPremiumUser(userId, 'Contribution reports require a Premium plan')
+  const { period, periodStartsAt, periodEndsAt } = completedEvaluationPeriod()
+  const evaluations = await Evaluation.find({ workspaceId, period }).populate('evaluatedUserId', 'name email')
+  if (periodEndsAt > new Date()) ensurePeriodEnded(evaluations)
+  const tasks = await Task.find({
+    workspaceId,
+    $or: [
+      { createdAt: { $gte: periodStartsAt, $lte: periodEndsAt } },
+      { deadline: { $gte: periodStartsAt, $lte: periodEndsAt } },
+      { completedAt: { $gte: periodStartsAt, $lte: periodEndsAt } },
+    ],
+  }).select('title status deadline completedAt assignedTo').populate('assignedTo', 'name email')
+  const tasksByMember = new Map()
+  for (const task of tasks) {
+    const deadline = task.deadline ? new Date(task.deadline) : null
+    const completedAt = task.completedAt ? new Date(task.completedAt) : null
+    let outcome = 'PENDING'
+    if (task.status === 'CANCELLED') outcome = 'CANCELLED'
+    else if (task.status === 'DONE') outcome = !deadline || (completedAt && completedAt <= deadline) ? 'ON_TIME' : 'OVERDUE'
+    else if (deadline && deadline < new Date()) outcome = 'OVERDUE'
+
+    for (const assignee of (task.assignedTo || []).filter(Boolean)) {
+      const memberId = assignee._id.toString()
+      const memberTasks = tasksByMember.get(memberId) || []
+      memberTasks.push({
+        title: task.title,
+        status: task.status,
+        deadline,
+        completedAt,
+        outcome,
+      })
+      tasksByMember.set(memberId, memberTasks)
+    }
+  }
 
   const grouped = new Map()
+  const workspaceMembers = await WorkspaceMember.find({ workspaceId }).populate('userId', 'name email')
+  for (const workspaceMember of workspaceMembers) {
+    if (!workspaceMember.userId) continue
+    const memberId = workspaceMember.userId._id.toString()
+    grouped.set(memberId, { user: workspaceMember.userId, scores: [], criteria: {}, evaluationCount: 0 })
+  }
+
   for (const evaluation of evaluations) {
+    if (!evaluation.evaluatedUserId) continue
     const userId = evaluation.evaluatedUserId._id.toString()
-    if (!grouped.has(userId)) grouped.set(userId, { user: evaluation.evaluatedUserId, scores: [], criteria: {}, evaluationCount: 0 })
+    if (!grouped.has(userId)) continue
     const result = grouped.get(userId)
     result.scores.push(evaluation.score)
     result.evaluationCount += 1
@@ -86,12 +166,15 @@ export async function getReport(workspaceId) {
 
   return {
     evaluationCount: evaluations.length,
-    members: [...grouped.values()].map((result) => ({
+    members: [...grouped.entries()].map(([userId, result]) => ({
       user: result.user,
-      averageScore: average(result.scores),
-      contributionScore: Math.round((average(result.scores) / 5) * 100),
+      averageScore: result.scores.length ? average(result.scores) : null,
+      contributionScore: result.scores.length ? Math.round((average(result.scores) / 5) * 100) : null,
       evaluationCount: result.evaluationCount,
       scoreByCriterion: Object.fromEntries(Object.entries(result.criteria).map(([name, scores]) => [name, average(scores)])),
+      taskOutcomes: tasksByMember.get(userId) || [],
     })),
+    period,
+    periodEndsAt,
   }
 }

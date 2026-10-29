@@ -7,6 +7,7 @@ export default function ChannelList({
   onSelectChannel,
   onOpenCreateModal,
   isLeader = true,
+  canCreateChannel = false,
 }) {
   const [searchTerm, setSearchTerm] = useState('')
 
@@ -24,9 +25,10 @@ export default function ChannelList({
               type="button"
               className="icon-action"
               onClick={onOpenCreateModal}
-              title="Create Channel"
+              disabled={!canCreateChannel}
+              title={canCreateChannel ? 'Create Channel' : 'Creating channels requires Premium'}
             >
-              <Plus size={16} />
+              {canCreateChannel ? <Plus size={16} /> : <Lock size={15} />}
             </button>
           )}
         </div>

@@ -1,4 +1,4 @@
-import { chat, generateFlashcards, generateQuiz, suggestTasks, summarize } from './ai.service.js'
+import { chat, confirmTaskSuggestions as confirmSuggestions, generateFlashcards, generateQuiz, suggestTasks, summarize } from './ai.service.js'
 
 async function handle(request, response, next, action, message) {
   try {
@@ -27,4 +27,14 @@ export function createFlashcards(request, response, next) {
 
 export function taskSuggestion(request, response, next) {
   return handle(request, response, next, () => suggestTasks({ workspaceId: request.aiWorkspaceId }), 'Task suggestions generated')
+}
+
+export function confirmTaskSuggestions(request, response, next) {
+  return handle(
+    request,
+    response,
+    next,
+    () => confirmSuggestions(request.auth.userId, request.aiWorkspaceId, request.body.suggestions),
+    'Confirmed task suggestions added to the task list',
+  )
 }

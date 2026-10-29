@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 import { Task } from '../modules/tasks/Task.js'
-import { WorkspaceMember } from '../modules/workspaces/WorkspaceMember.js'
+import { findActiveWorkspaceMember } from './workspace.middleware.js'
 
 export async function requireTaskMember(request, _response, next) {
   try {
@@ -17,7 +17,7 @@ export async function requireTaskMember(request, _response, next) {
       return next(error)
     }
 
-    const member = await WorkspaceMember.findOne({ workspaceId: task.workspaceId, userId: request.auth.userId })
+    const member = await findActiveWorkspaceMember(task.workspaceId, request.auth.userId)
     if (!member) {
       const error = new Error('Workspace membership required')
       error.statusCode = 403
@@ -30,4 +30,13 @@ export async function requireTaskMember(request, _response, next) {
   } catch (error) {
     return next(error)
   }
+}
+
+export function requireTaskReminderManager(request, _response, next) {
+  if (['OWNER', 'LEADER'].includes(request.workspaceMember?.role) || request.task.createdBy.equals(request.auth.userId)) {
+    return next()
+  }
+  const error = new Error('Only a workspace leader or the task creator can manage reminders')
+  error.statusCode = 403
+  return next(error)
 }

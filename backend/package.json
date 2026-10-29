@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "build": "node --check src/server.js",
+    "test": "node --test",
     "start": "node src/server.js"
   },
   "dependencies": {
@@ -15,13 +16,16 @@
     "express": "^4.21.2",
     "express-validator": "^7.2.1",
     "jsonwebtoken": "^9.0.2",
+    "mammoth": "^1.13.0",
     "mongoose": "^8.9.5",
     "multer": "^2.0.2",
+    "nodemailer": "^7.0.3",
     "openai": "^4.77.0",
-    "socket.io": "^4.8.1"
+    "pdf-parse": "^2.4.5",
+    "socket.io": "^4.8.1",
+    "word-extractor": "^1.0.4"
   },
   "devDependencies": {
-    "jest": "^29.7.0",
     "socket.io-client": "^4.8.3",
     "supertest": "^7.0.0"
   }

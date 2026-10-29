@@ -6,6 +6,55 @@ import PublicRoute from '../routes/PublicRoute.jsx'
 import { AuthContext } from '../context/AuthContext.jsx'
 
 describe('Protected Routes & Navigation', () => {
+  test('shows the landing page to unauthenticated visitors at /', () => {
+    const unauthContext = {
+      isAuthenticated: false,
+      loading: false,
+      user: null,
+      token: null,
+    }
+
+    render(
+      <AuthContext.Provider value={unauthContext}>
+        <MemoryRouter initialEntries={['/']}>
+          <Routes>
+            <Route element={<PublicRoute />}>
+              <Route path="/" element={<div>NexusStudy landing page</div>} />
+              <Route path="/dashboard" element={<div>Dashboard</div>} />
+            </Route>
+          </Routes>
+        </MemoryRouter>
+      </AuthContext.Provider>
+    )
+
+    expect(screen.getByText('NexusStudy landing page')).toBeInTheDocument()
+  })
+
+  test('redirects authenticated visitors from / to the dashboard', () => {
+    const authContext = {
+      isAuthenticated: true,
+      loading: false,
+      user: { _id: '1', name: 'Student' },
+      token: 'valid-token',
+    }
+
+    render(
+      <AuthContext.Provider value={authContext}>
+        <MemoryRouter initialEntries={['/']}>
+          <Routes>
+            <Route element={<PublicRoute />}>
+              <Route path="/" element={<div>NexusStudy landing page</div>} />
+            </Route>
+            <Route path="/dashboard" element={<div>Dashboard</div>} />
+          </Routes>
+        </MemoryRouter>
+      </AuthContext.Provider>
+    )
+
+    expect(screen.getByText('Dashboard')).toBeInTheDocument()
+    expect(screen.queryByText('NexusStudy landing page')).not.toBeInTheDocument()
+  })
+
   test('redirects unauthenticated users to /login when accessing protected routes', () => {
     const unauthContext = {
       isAuthenticated: false,

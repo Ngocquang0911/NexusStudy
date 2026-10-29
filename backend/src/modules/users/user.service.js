@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs'
 import { User } from './User.js'
+import { validatePasswordChange, validateProfileUpdate } from './user.validation.js'
 
 function userError(message, statusCode) {
   const error = new Error(message)
@@ -12,19 +13,19 @@ export function getUserModuleStatus() {
 }
 
 export async function updateProfile(userId, payload) {
+  const updates = validateProfileUpdate(payload)
   const user = await User.findById(userId)
   if (!user) throw userError('User not found', 404)
 
-  if (payload.name !== undefined) user.name = payload.name.trim()
-  if (payload.avatar !== undefined) user.avatar = payload.avatar.trim()
-  if (payload.bio !== undefined) user.bio = payload.bio.trim()
+  if (updates.name !== undefined) user.name = updates.name
+  if (updates.avatar !== undefined) user.avatar = updates.avatar
+  if (updates.bio !== undefined) user.bio = updates.bio
 
   return user.save()
 }
 
-export async function changePassword(userId, { currentPassword, newPassword }) {
-  if (!currentPassword || !newPassword) throw userError('Current and new password are required', 400)
-  if (newPassword.length < 6) throw userError('New password must be at least 6 characters', 400)
+export async function changePassword(userId, payload) {
+  const { currentPassword, newPassword } = validatePasswordChange(payload)
 
   const user = await User.findById(userId).select('+password')
   if (!user) throw userError('User not found', 404)

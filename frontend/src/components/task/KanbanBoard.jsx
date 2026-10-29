@@ -1,4 +1,5 @@
 import KanbanColumn from './KanbanColumn.jsx'
+import { getTaskBoardStatus, TASK_BOARD_STATUSES, TASK_STATUS_LABELS } from '../../utils/taskStatus.js'
 
 export default function KanbanBoard({
   tasks = [],
@@ -8,46 +9,25 @@ export default function KanbanBoard({
   onQuickAdd,
   currentUserId,
   userRole,
+  now,
 }) {
-  const todoTasks = tasks.filter((t) => t.status === 'TODO')
-  const inProgressTasks = tasks.filter((t) => t.status === 'IN_PROGRESS')
-  const doneTasks = tasks.filter((t) => t.status === 'DONE')
-
   return (
     <div className="kanban-board-grid">
-      <KanbanColumn
-        status="TODO"
-        title="To Do"
-        tasks={todoTasks}
-        onEditTask={onEditTask}
-        onDeleteTask={onDeleteTask}
-        onStatusChange={onStatusChange}
-        onQuickAdd={onQuickAdd}
-        currentUserId={currentUserId}
-        userRole={userRole}
-      />
-      <KanbanColumn
-        status="IN_PROGRESS"
-        title="In Progress"
-        tasks={inProgressTasks}
-        onEditTask={onEditTask}
-        onDeleteTask={onDeleteTask}
-        onStatusChange={onStatusChange}
-        onQuickAdd={onQuickAdd}
-        currentUserId={currentUserId}
-        userRole={userRole}
-      />
-      <KanbanColumn
-        status="DONE"
-        title="Done"
-        tasks={doneTasks}
-        onEditTask={onEditTask}
-        onDeleteTask={onDeleteTask}
-        onStatusChange={onStatusChange}
-        onQuickAdd={onQuickAdd}
-        currentUserId={currentUserId}
-        userRole={userRole}
-      />
+      {TASK_BOARD_STATUSES.map((status) => (
+        <KanbanColumn
+          key={status}
+          status={status}
+          title={TASK_STATUS_LABELS[status]}
+          tasks={tasks.filter((task) => getTaskBoardStatus(task, now) === status)}
+          onEditTask={onEditTask}
+          onDeleteTask={onDeleteTask}
+          onStatusChange={onStatusChange}
+          onQuickAdd={onQuickAdd}
+          currentUserId={currentUserId}
+          userRole={userRole}
+          now={now}
+        />
+      ))}
     </div>
   )
 }

@@ -2,21 +2,26 @@ import { LoaderCircle, Lock, X } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 
-export default function CreateChannelModal({ isOpen, onClose, onSubmit, loading = false }) {
+export default function CreateChannelModal({ isOpen, onClose, onSubmit, members = [], loading = false }) {
   const {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm({
     defaultValues: {
       name: '',
       description: '',
       isPrivate: false,
+      allowedMembers: [],
     },
   })
 
   const [formError, setFormError] = useState('')
+  const isPrivate = watch('isPrivate')
+  const allowedMembers = watch('allowedMembers') || []
 
   if (!isOpen) return null
 
@@ -42,6 +47,32 @@ export default function CreateChannelModal({ isOpen, onClose, onSubmit, loading 
             <X size={18} />
           </button>
         </div>
+
+        {isPrivate && members.length > 0 && (
+          <div className="form-group">
+            <label>Channel members</label>
+            <div className="assignee-select-list">
+              {members.map((member) => {
+                const memberUser = member.userId || member
+                const memberId = memberUser._id
+                const isChecked = allowedMembers.includes(memberId)
+                return (
+                  <label key={memberId} className={`assignee-checkbox-item ${isChecked ? 'selected' : ''}`}>
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => setValue(
+                        'allowedMembers',
+                        isChecked ? allowedMembers.filter((id) => id !== memberId) : [...allowedMembers, memberId],
+                      )}
+                    />
+                    <span className="member-name">{memberUser.name || memberUser.email || 'Member'}</span>
+                  </label>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {formError && <p className="form-error">{formError}</p>}
 

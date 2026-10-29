@@ -1,4 +1,4 @@
-import { ArrowLeft, Bot, Sparkles } from 'lucide-react'
+import { ArrowLeft, Check, Clock3, LoaderCircle, Sparkles } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import AiChatWindow from '../../components/ai/AiChatWindow.jsx'
@@ -6,6 +6,7 @@ import AiQuickTools from '../../components/ai/AiQuickTools.jsx'
 import useAuth from '../../hooks/useAuth.js'
 import {
   askAi,
+  confirmSuggestedTasks,
   generateFlashcards,
   generateQuiz,
   suggestTaskDistribution,
@@ -13,6 +14,7 @@ import {
 } from '../../services/aiService.js'
 import { listDocuments } from '../../services/documentService.js'
 import { getWorkspace, listWorkspaces } from '../../services/workspaceService.js'
+import './ai-suggestions.css'
 
 export default function AIAssistantPage() {
   const { workspaceId: paramWorkspaceId } = useParams()
@@ -28,6 +30,9 @@ export default function AIAssistantPage() {
   const [messages, setMessages] = useState([])
   const [aiLoading, setAiLoading] = useState(false)
   const [error, setError] = useState('')
+  const [taskSuggestions, setTaskSuggestions] = useState([])
+  const [selectedSuggestionIndexes, setSelectedSuggestionIndexes] = useState([])
+  const [taskSuggestionNotice, setTaskSuggestionNotice] = useState('')
 
   const activeWsId = paramWorkspaceId || selectedWorkspaceId
 
@@ -110,6 +115,7 @@ export default function AIAssistantPage() {
   const handleQuickAction = async (actionType) => {
     if (!activeWsId) return
     setError('')
+    setTaskSuggestionNotice('')
     setAiLoading(true)
 
     let promptText = ''
@@ -134,6 +140,21 @@ export default function AIAssistantPage() {
     try {
       const { data } = await apiCall
       const aiData = data.data || {}
+      if (actionType === 'TASK_SUGGESTION') {
+        const suggestions = aiData.suggestions || []
+        setTaskSuggestions(suggestions)
+        setSelectedSuggestionIndexes(suggestions.map((_suggestion, index) => index))
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: aiData.message || (suggestions.length
+              ? 'Review the proposed tasks below. Select the ones you want to add to your workspace.'
+              : 'No task suggestions were returned. Check the AI provider configuration and try again.'),
+          },
+        ])
+        return
+      }
       setMessages((prev) => [
         ...prev,
         {
@@ -151,6 +172,24 @@ export default function AIAssistantPage() {
           content: `Error: ${err.response?.data?.message || 'Failed to complete action.'}`,
         },
       ])
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
+  const handleConfirmSuggestions = async () => {
+    const selected = selectedSuggestionIndexes.map((index) => taskSuggestions[index]).filter(Boolean)
+    if (!selected.length || !activeWsId) return
+    setAiLoading(true)
+    setError('')
+    setTaskSuggestionNotice('')
+    try {
+      const { data } = await confirmSuggestedTasks({ workspaceId: activeWsId, suggestions: selected })
+      setTaskSuggestionNotice(`${data.data.length} confirmed task${data.data.length === 1 ? '' : 's'} added to the To Do list.`)
+      setTaskSuggestions([])
+      setSelectedSuggestionIndexes([])
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Unable to add the selected tasks')
     } finally {
       setAiLoading(false)
     }
@@ -218,8 +257,48 @@ export default function AIAssistantPage() {
         onSelectAction={handleQuickAction}
         loading={aiLoading}
         documentCount={documents.length}
+        isPremium={user?.subscriptionPlan === 'PREMIUM'}
       />
 
+      {taskSuggestions.length > 0 && (
+        <section className="surface-card ai-task-suggestions" aria-label="AI task suggestions">
+          <div className="section-heading">
+            <div><span className="eyebrow">PREMIUM AI PLAN</span><h2>Suggested task list</h2></div>
+            <span>{selectedSuggestionIndexes.length} selected</span>
+          </div>
+          <div className="ai-suggestion-list">
+            {taskSuggestions.map((suggestion, index) => {
+              const checked = selectedSuggestionIndexes.includes(index)
+              return (
+                <label className={`ai-suggestion-card ${checked ? 'selected' : ''}`} key={`${suggestion.title}-${index}`}>
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => setSelectedSuggestionIndexes((current) =>
+                      checked ? current.filter((item) => item !== index) : [...current, index],
+                    )}
+                  />
+                  <span className="ai-suggestion-copy">
+                    <strong>{suggestion.title}</strong>
+                    <small>{suggestion.description}</small>
+                    <span className="ai-suggestion-meta">
+                      <span>{suggestion.difficulty}</span>
+                      <span><Clock3 size={12} /> {suggestion.estimatedHours}h</span>
+                      <span>{suggestion.priority}</span>
+                    </span>
+                  </span>
+                </label>
+              )
+            })}
+          </div>
+          <button type="button" className="primary-action" onClick={handleConfirmSuggestions} disabled={aiLoading || selectedSuggestionIndexes.length === 0}>
+            {aiLoading ? <LoaderCircle className="spin" size={16} /> : <Check size={16} />}
+            Add selected tasks to To Do
+          </button>
+        </section>
+      )}
+
+      {taskSuggestionNotice && <p className="member-message" role="status">{taskSuggestionNotice}</p>}
       {error && (
         <div className="inline-error" role="alert">
           {error}

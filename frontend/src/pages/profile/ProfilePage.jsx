@@ -1,12 +1,14 @@
 import { CheckCircle2, KeyRound, LoaderCircle, Lock, ShieldCheck, User as UserIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { useSearchParams } from 'react-router-dom'
 import useAuth from '../../hooks/useAuth.js'
 import { changePassword, updateProfile } from '../../services/userService.js'
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuth()
-  const [activeTab, setActiveTab] = useState('PROFILE') // 'PROFILE' | 'PASSWORD'
+  const [searchParams] = useSearchParams()
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') === 'PASSWORD' ? 'PASSWORD' : 'PROFILE')
 
   const [profileSuccess, setProfileSuccess] = useState('')
   const [profileError, setProfileError] = useState('')
@@ -43,6 +45,10 @@ export default function ProfilePage() {
       confirmPassword: '',
     },
   })
+
+  useEffect(() => {
+    setActiveTab(searchParams.get('tab') === 'PASSWORD' ? 'PASSWORD' : 'PROFILE')
+  }, [searchParams])
 
   useEffect(() => {
     if (user) {
@@ -127,6 +133,9 @@ export default function ProfilePage() {
               <span className="system-role-tag">{user?.systemRole || 'STUDENT'}</span>
             </div>
             <span className="profile-email">{user?.email}</span>
+            <span className={`profile-plan-tag ${user?.subscriptionPlan === 'PREMIUM' ? 'premium' : ''}`}>
+              Current plan: {user?.subscriptionPlan === 'PREMIUM' ? 'Premium' : 'Free'}
+            </span>
             {user?.bio && <p className="profile-bio-text">"{user.bio}"</p>}
           </div>
         </div>

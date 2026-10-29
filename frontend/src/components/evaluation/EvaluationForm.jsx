@@ -67,10 +67,6 @@ export default function EvaluationForm({
 
     setLoading(true)
 
-    // Default period ends 7 days from now
-    const periodEndsAt = new Date()
-    periodEndsAt.setDate(periodEndsAt.getDate() + 7)
-
     const criteriaPayload = Object.entries(scores).map(([name, score]) => ({
       name,
       score,
@@ -79,8 +75,6 @@ export default function EvaluationForm({
     try {
       await submitEvaluation(workspaceId, {
         evaluatedUserId: selectedUserId,
-        period: 'current',
-        periodEndsAt: periodEndsAt.toISOString(),
         criteria: criteriaPayload,
         comment: comment.trim(),
       })
@@ -111,7 +105,7 @@ export default function EvaluationForm({
         <div>
           <span className="eyebrow">PEER REVIEW</span>
           <h2>Submit Peer Evaluation</h2>
-          <p>Rate your team member's contributions objectively and constructively.</p>
+          <p>Rate each teammate once per month. Results become available to Premium workspace leaders after the month closes.</p>
         </div>
         <div className="period-badge">
           <Clock size={14} /> Current Period

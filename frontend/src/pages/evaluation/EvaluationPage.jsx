@@ -23,6 +23,7 @@ export default function EvaluationPage() {
   const [myEvaluations, setMyEvaluations] = useState([])
   const [reportData, setReportData] = useState(null)
   const [reportPrivate, setReportPrivate] = useState(false)
+  const [reportMessage, setReportMessage] = useState('')
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -56,6 +57,8 @@ export default function EvaluationPage() {
     setLoading(true)
     setError('')
     setReportPrivate(false)
+    setReportMessage('')
+    setReportData(null)
     try {
       const [memberRes, wsRes, myEvalRes] = await Promise.all([
         getWorkspaceMembers(activeWsId).catch(() => ({ data: { data: [] } })),
@@ -72,9 +75,8 @@ export default function EvaluationPage() {
         const reportRes = await getEvaluationReport(activeWsId)
         setReportData(reportRes.data.data || null)
       } catch (repErr) {
-        if (repErr.response?.status === 403) {
-          setReportPrivate(true)
-        }
+        setReportPrivate(true)
+        setReportMessage(repErr.response?.data?.message || 'Failed to load the contribution report.')
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load evaluation data')
@@ -196,6 +198,7 @@ export default function EvaluationPage() {
           reportData={reportData}
           isPrivate={reportPrivate}
           isLeader={isLeader}
+          privateMessage={reportMessage}
         />
       )}
     </div>

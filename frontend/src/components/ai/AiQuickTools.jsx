@@ -1,6 +1,6 @@
-import { FileText, HelpCircle, Layers, ListOrdered, Sparkles } from 'lucide-react'
+import { FileText, HelpCircle, Layers, ListOrdered, Lock } from 'lucide-react'
 
-export default function AiQuickTools({ onSelectAction, loading = false, documentCount = 0 }) {
+export default function AiQuickTools({ onSelectAction, loading = false, documentCount = 0, isPremium = false }) {
   return (
     <div className="ai-quick-tools-grid">
       <button
@@ -52,14 +52,14 @@ export default function AiQuickTools({ onSelectAction, loading = false, document
         type="button"
         className="ai-tool-card"
         onClick={() => onSelectAction('TASK_SUGGESTION')}
-        disabled={loading}
+        disabled={loading || !isPremium}
       >
         <div className="tool-icon-wrapper green">
-          <ListOrdered size={20} />
+          {isPremium ? <ListOrdered size={20} /> : <Lock size={18} />}
         </div>
         <div className="tool-info">
           <strong>Task Distribution</strong>
-          <small>Analyze workload & suggest assignments</small>
+          <small>{isPremium ? 'Suggest tasks, difficulty & time estimates' : 'Premium feature'}</small>
         </div>
       </button>
     </div>

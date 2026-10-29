@@ -14,7 +14,7 @@ export function create(request, response, next) {
 }
 
 export function list(request, response, next) {
-  return handle(request, response, next, () => listEvaluations(request.params.workspaceId, request.workspaceMember), 'Evaluations retrieved')
+  return handle(request, response, next, () => listEvaluations(request.params.workspaceId, request.auth.userId, request.workspaceMember), 'Evaluations retrieved')
 }
 
 export function mine(request, response, next) {
@@ -22,5 +22,5 @@ export function mine(request, response, next) {
 }
 
 export function report(request, response, next) {
-  return handle(request, response, next, () => getReport(request.params.workspaceId), 'Evaluation report retrieved')
+  return handle(request, response, next, () => getReport(request.params.workspaceId, request.auth.userId, request.workspaceMember), 'Evaluation report retrieved')
 }

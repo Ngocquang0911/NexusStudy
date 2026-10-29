@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 import { Poll } from '../modules/polls/Poll.js'
-import { WorkspaceMember } from '../modules/workspaces/WorkspaceMember.js'
+import { findActiveWorkspaceMember } from './workspace.middleware.js'
 
 export async function requirePollMember(request, _response, next) {
   try {
@@ -17,7 +17,7 @@ export async function requirePollMember(request, _response, next) {
       return next(error)
     }
 
-    const member = await WorkspaceMember.findOne({ workspaceId: poll.workspaceId, userId: request.auth.userId })
+    const member = await findActiveWorkspaceMember(poll.workspaceId, request.auth.userId)
     if (!member) {
       const error = new Error('Workspace membership required')
       error.statusCode = 403
