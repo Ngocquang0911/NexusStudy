@@ -24,8 +24,8 @@ const gmailFallbackTransporter = smtpConfigured && gmailSmtp && env.smtpPort ===
   : null
 
 function isConnectionFailure(error) {
-  return ['ETIMEDOUT', 'ECONNECTION', 'ECONNREFUSED', 'ESOCKET'].includes(error.code)
-    || /connect ETIMEDOUT|ECONNREFUSED/i.test(error.message || '')
+  return ['ETIMEDOUT', 'ECONNECTION', 'ECONNREFUSED', 'ESOCKET', 'EDNS', 'EAI_AGAIN'].includes(error.code)
+    || /connect ETIMEDOUT|ECONNREFUSED|DNS.*timeout|queryA ETIMEOUT/i.test(error.message || '')
 }
 
 async function sendMail(message) {
@@ -53,6 +53,15 @@ export async function sendDeadlineReminder({ to, taskTitle, workspaceName, deadl
     to,
     subject: `NEXUS STUDY deadline reminder: ${taskTitle}`,
     text: `Reminder for "${taskTitle}" in ${workspaceName}. The deadline is ${new Date(deadline).toLocaleString()}.`,
+  })
+}
+
+export async function sendAppointmentReminder({ to, appointmentTitle, workspaceName, startsAt }) {
+  await sendMail({
+    from: env.smtpFrom,
+    to,
+    subject: `NEXUS STUDY appointment reminder: ${appointmentTitle}`,
+    text: `Reminder: "${appointmentTitle}" in ${workspaceName} starts ${new Date(startsAt).toLocaleString()}.`,
   })
 }
 

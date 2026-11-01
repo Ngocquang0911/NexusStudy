@@ -6,6 +6,7 @@ const notificationSchema = new mongoose.Schema(
     workspaceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Workspace', required: true },
     invitationId: { type: mongoose.Schema.Types.ObjectId, ref: 'WorkspaceInvitation', default: null, index: true },
     taskId: { type: mongoose.Schema.Types.ObjectId, ref: 'Task', default: null },
+    appointmentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Appointment', default: null },
     reminderKey: { type: String, required: true },
     type: { type: String, required: true, default: 'TASK_DEADLINE' },
     title: { type: String, required: true },

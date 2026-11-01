@@ -2,14 +2,16 @@ import { unlink } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Document } from '../modules/documents/Document.js'
-import { isSmtpConfigured, sendDeadlineReminder } from '../modules/notifications/email.service.js'
+import { isSmtpConfigured, sendAppointmentReminder, sendDeadlineReminder } from '../modules/notifications/email.service.js'
 import { Notification } from '../modules/notifications/Notification.js'
 import { Poll } from '../modules/polls/Poll.js'
 import { getUserPlan, PLAN_LIMITS } from '../modules/plans/plan.service.js'
 import { Task } from '../modules/tasks/Task.js'
+import { Appointment } from '../modules/appointments/Appointment.js'
 import { ACTIVE_WORKSPACE_QUERY, Workspace } from '../modules/workspaces/Workspace.js'
 import { runDeletedWorkspaceRetentionJobs } from '../modules/workspaces/workspace.archive.service.js'
 import { expirePendingWorkspaceInvitations } from '../modules/workspaces/workspace.service.js'
+import { WorkspaceMember } from '../modules/workspaces/WorkspaceMember.js'
 
 const STALE_LOCK_MS = 10 * 60 * 1000
 let running = false
@@ -78,10 +80,10 @@ async function deliverDueReminders(now) {
           new: true,
           arrayFilters: [
             {
-              'item._id': reminder._id,
-              'item.sentAt': null,
-              'item.sendAt': { $lte: now },
-              $or: [{ 'item.lockedAt': null }, { 'item.lockedAt': { $lt: staleLock } }],
+              $and: [
+                { 'item._id': reminder._id, 'item.sentAt': null, 'item.sendAt': { $lte: now } },
+                { $or: [{ 'item.lockedAt': null }, { 'item.lockedAt': { $lt: staleLock } }] },
+              ],
             },
           ],
         },
@@ -126,7 +128,7 @@ async function deliverPendingNotificationEmails(now) {
   const activeWorkspaceIds = await Workspace.find(ACTIVE_WORKSPACE_QUERY).distinct('_id')
   const pending = await Notification.find({
     workspaceId: { $in: activeWorkspaceIds },
-    type: 'TASK_DEADLINE',
+    type: { $in: ['TASK_DEADLINE', 'APPOINTMENT_REMINDER'] },
     emailSentAt: null,
     $or: [{ emailLockedAt: null }, { emailLockedAt: { $lt: staleLock } }],
   })
@@ -137,7 +139,7 @@ async function deliverPendingNotificationEmails(now) {
     const notification = await Notification.findOneAndUpdate(
       {
         _id: candidate._id,
-        type: 'TASK_DEADLINE',
+        type: { $in: ['TASK_DEADLINE', 'APPOINTMENT_REMINDER'] },
         emailSentAt: null,
         $or: [{ emailLockedAt: null }, { emailLockedAt: { $lt: staleLock } }],
       },
@@ -149,12 +151,17 @@ async function deliverPendingNotificationEmails(now) {
     )
       .populate('userId', 'email')
       .populate('taskId', 'title deadline status')
+      .populate('appointmentId', 'title startsAt cancelledAt')
       .populate('workspaceId', 'name')
     if (!notification) continue
 
-    if (!notification.userId?.email || !notification.taskId
-      || ['DONE', 'CANCELLED'].includes(notification.taskId.status)
-      || notification.taskId.deadline <= now) {
+    const isAppointment = notification.type === 'APPOINTMENT_REMINDER'
+    const targetExists = isAppointment ? notification.appointmentId : notification.taskId
+    const targetTime = isAppointment ? notification.appointmentId?.startsAt : notification.taskId?.deadline
+    if (!notification.userId?.email || !targetExists
+      || (isAppointment && notification.appointmentId.cancelledAt)
+      || (!isAppointment && ['DONE', 'CANCELLED'].includes(notification.taskId.status))
+      || targetTime <= now) {
       await Notification.updateOne(
         { _id: notification._id, emailSentAt: null },
         { $set: { emailSentAt: now, emailLockedAt: null } },
@@ -163,12 +170,21 @@ async function deliverPendingNotificationEmails(now) {
     }
 
     try {
-      await sendDeadlineReminder({
-        to: notification.userId.email,
-        taskTitle: notification.taskId.title,
-        workspaceName: notification.workspaceId?.name || 'your workspace',
-        deadline: notification.taskId.deadline,
-      })
+      if (isAppointment) {
+        await sendAppointmentReminder({
+          to: notification.userId.email,
+          appointmentTitle: notification.appointmentId.title,
+          workspaceName: notification.workspaceId?.name || 'your workspace',
+          startsAt: notification.appointmentId.startsAt,
+        })
+      } else {
+        await sendDeadlineReminder({
+          to: notification.userId.email,
+          taskTitle: notification.taskId.title,
+          workspaceName: notification.workspaceId?.name || 'your workspace',
+          deadline: notification.taskId.deadline,
+        })
+      }
     } catch (error) {
       await Notification.updateOne(
         { _id: notification._id, emailSentAt: null },
@@ -183,19 +199,76 @@ async function deliverPendingNotificationEmails(now) {
   }
 }
 
+async function queueAppointmentReminders(now) {
+  const staleLock = new Date(now.getTime() - STALE_LOCK_MS)
+  const activeWorkspaceIds = await Workspace.find(ACTIVE_WORKSPACE_QUERY).distinct('_id')
+  const appointments = await Appointment.find({ workspaceId: { $in: activeWorkspaceIds }, cancelledAt: null, startsAt: { $gt: now }, reminders: { $elemMatch: { sendAt: { $lte: now }, sentAt: null } } })
+    .limit(100)
+    .populate('attendeeIds', 'email')
+  for (const appointment of appointments) {
+    for (const reminder of appointment.reminders) {
+      if (reminder.sendAt > now || reminder.sentAt) continue
+      const claimed = await Appointment.findOneAndUpdate({
+        _id: appointment._id,
+        cancelledAt: null,
+        reminders: { $elemMatch: { _id: reminder._id, sendAt: { $lte: now }, sentAt: null, $or: [{ lockedAt: null }, { lockedAt: { $lt: staleLock } }] } },
+      }, { $set: { 'reminders.$[item].lockedAt': now } }, {
+        new: true,
+        arrayFilters: [{
+          $and: [
+            { 'item._id': reminder._id, 'item.sentAt': null, 'item.sendAt': { $lte: now } },
+            { $or: [{ 'item.lockedAt': null }, { 'item.lockedAt': { $lt: staleLock } }] },
+          ],
+        }],
+      })
+      if (!claimed) continue
+      try {
+        for (const attendee of appointment.attendeeIds) {
+          if (!attendee) continue
+          const activeMember = await WorkspaceMember.exists({ workspaceId: appointment.workspaceId, userId: attendee._id })
+          if (!activeMember) continue
+          const key = `appointment:${appointment._id}:${reminder._id}`
+          await Notification.findOneAndUpdate({ userId: attendee._id, reminderKey: key }, {
+            $setOnInsert: {
+              workspaceId: appointment.workspaceId,
+              appointmentId: appointment._id,
+              taskId: null,
+              type: 'APPOINTMENT_REMINDER',
+              title: 'Appointment reminder',
+              message: `"${appointment.title}" starts ${new Date(appointment.startsAt).toLocaleString()}.`,
+            },
+          }, { upsert: true, new: true })
+        }
+        await Appointment.updateOne({ _id: appointment._id, 'reminders._id': reminder._id }, { $set: { 'reminders.$.sentAt': now, 'reminders.$.lockedAt': null } })
+      } catch (error) {
+        await Appointment.updateOne({ _id: appointment._id, 'reminders._id': reminder._id }, { $set: { 'reminders.$.lockedAt': null } })
+        throw error
+      }
+    }
+  }
+}
+
 export async function runReminderJobs() {
   if (running) return
   running = true
   try {
     const now = new Date()
-    await runDeletedWorkspaceRetentionJobs(now)
-    await expirePendingWorkspaceInvitations(now)
-    await closeExpiredPolls(now)
-    await removeExpiredDocuments(now)
-    await deliverDueReminders(now)
-    await deliverPendingNotificationEmails(now)
-  } catch (error) {
-    console.error('Scheduled retention or reminder job failed', error)
+    const jobs = [
+      ['deleted workspace retention', () => runDeletedWorkspaceRetentionJobs(now)],
+      ['workspace invitation expiry', () => expirePendingWorkspaceInvitations(now)],
+      ['poll expiry', () => closeExpiredPolls(now)],
+      ['document retention', () => removeExpiredDocuments(now)],
+      ['appointment reminders', () => queueAppointmentReminders(now)],
+      ['task reminders', () => deliverDueReminders(now)],
+      ['reminder email delivery', () => deliverPendingNotificationEmails(now)],
+    ]
+    for (const [name, job] of jobs) {
+      try {
+        await job()
+      } catch (error) {
+        console.error(`Scheduled ${name} job failed`, error)
+      }
+    }
   } finally {
     running = false
   }

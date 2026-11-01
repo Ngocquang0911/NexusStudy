@@ -12,6 +12,7 @@ import pollRoutes from './modules/polls/poll.routes.js'
 import taskRoutes from './modules/tasks/task.routes.js'
 import notificationRoutes from './modules/notifications/notification.routes.js'
 import workspaceRoutes from './modules/workspaces/workspace.routes.js'
+import appointmentRoutes from './modules/appointments/appointment.routes.js'
 
 export function createApp() {
   const app = express()
@@ -40,6 +41,7 @@ export function createApp() {
   app.use('/api/workspaces', workspaceRoutes)
   app.use('/api', taskRoutes)
   app.use('/api', notificationRoutes)
+  app.use('/api', appointmentRoutes)
 
   app.use(notFoundHandler)
   app.use(errorHandler)
