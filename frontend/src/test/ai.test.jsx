@@ -59,4 +59,17 @@ describe('NEXUS AI Assistant Module', () => {
     expect(screen.getByText('The core requirements include React, Vite, Socket.IO, and MongoDB.')).toBeInTheDocument()
     expect(screen.getByText('requirements.pdf')).toBeInTheDocument()
   })
+
+  test('formats assistant Markdown without interpreting user text or raw HTML', () => {
+    render(<AiChatWindow messages={[
+      { role: 'user', content: '**literal**' },
+      { role: 'assistant', content: '# Study notes\n\n- **Stack:** `Node.js`\n- Flow $\\rightarrow$ API\n\n<script>alert(1)</script>' },
+    ]} onSendMessage={vi.fn()} />)
+    expect(screen.getByRole('heading', { name: 'Study notes' })).toBeInTheDocument()
+    expect(screen.getByText('Stack:').tagName).toBe('STRONG')
+    expect(screen.getByText('Node.js').tagName).toBe('CODE')
+    expect(screen.getByText('Flow → API')).toBeInTheDocument()
+    expect(screen.getByText('**literal**')).toBeInTheDocument()
+    expect(document.querySelector('.ai-markdown script')).toBeNull()
+  })
 })

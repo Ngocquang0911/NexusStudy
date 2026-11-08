@@ -25,6 +25,14 @@ body[data-workspace-theme="dark"] .workspace-settings-menu strong { color: #f2ed
 body[data-workspace-theme="dark"] :is(.dashboard-hero, .auth-showcase) { color: #fff; }
 body[data-workspace-theme="dark"] :is(.primary-action, .danger-delete-button) { color: #fff; }
 
+/* Keep both sides of the AI conversation readable in dark mode. */
+body[data-workspace-theme="dark"] .ai-message-bubble.ai-role .msg-text-body,
+body[data-workspace-theme="dark"] .ai-thinking-row { background: #352e43; border-color: #574a68; color: #f3effa; }
+body[data-workspace-theme="dark"] .ai-message-bubble.user-role .msg-text-body { background: #6950b5; color: #fff; }
+body[data-workspace-theme="dark"] .ai-message-bubble .msg-sender-title { color: #c7bdd4; }
+body[data-workspace-theme="dark"] .ai-chat-window .source-tag { background: #473961; color: #e2d7ff; }
+body[data-workspace-theme="dark"] .ai-chat-window .source-documents-footer small { color: #c7bdd4; }
+
 /* Account menu contrast and avatar controls in dark mode. */
 body[data-workspace-theme="dark"] .topbar-avatar-button { display: inline-flex; align-items: center; flex-direction: row; width: auto; height: 42px; padding: 4px 9px 4px 4px; border-color: #514660; border-radius: 999px; background: #30293c; }
 body[data-workspace-theme="dark"] .topbar-avatar-button:hover { background: #3b304b; border-color: #9a80d4; }

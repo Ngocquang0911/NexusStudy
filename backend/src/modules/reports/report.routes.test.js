@@ -7,6 +7,7 @@ import { User } from '../users/User.js'
 import { WorkspaceMember } from '../workspaces/WorkspaceMember.js'
 import { Workspace } from '../workspaces/Workspace.js'
 import { Document } from '../documents/Document.js'
+import { Appointment } from '../appointments/Appointment.js'
 import { Message } from '../chat/Message.js'
 import { Channel } from '../chat/Channel.js'
 import { Task } from '../tasks/Task.js'
@@ -74,7 +75,7 @@ test('admin permanently deletes an ownerless workspace without creating an archi
   t.mock.method(Workspace, 'findOneAndUpdate', async (filter, update) => { claim = { filter, update }; return { _id: workspace, name: 'Ownerless' } })
   t.mock.method(Workspace, 'deleteOne', async (filter) => { removed = filter })
   t.mock.method(Document, 'find', () => ({ select() { return this }, lean: async () => [] }))
-  for (const model of [Document, Message, Channel, Task, Poll, Evaluation, WorkspaceInvitation, Notification, WorkspaceMember]) t.mock.method(model, 'deleteMany', async () => ({}))
+  for (const model of [Document, Message, Channel, Task, Poll, Evaluation, WorkspaceInvitation, Notification, WorkspaceMember, Appointment]) t.mock.method(model, 'deleteMany', async () => ({}))
   const { AdminAuditLog } = await import('../admin/AdminAuditLog.js')
   t.mock.method(AdminAuditLog, 'create', async () => ({}))
   const res = reply()

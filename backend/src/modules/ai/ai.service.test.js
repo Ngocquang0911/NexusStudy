@@ -3,7 +3,24 @@ import { randomUUID } from 'node:crypto'
 import { unlink, writeFile } from 'node:fs/promises'
 import test from 'node:test'
 import { env } from '../../config/env.js'
-import { chat, extractDocumentText, suggestTasks } from './ai.service.js'
+import { chat, describeAiProviderError, extractDocumentText, suggestTasks, validateStudyCount } from './ai.service.js'
+
+test('study item limits follow the requesting account plan', () => {
+  assert.equal(validateStudyCount(10, 'FREE'), 10)
+  assert.equal(validateStudyCount(15, 'FREE'), 15)
+  assert.equal(validateStudyCount(20, 'FREE'), 20)
+  assert.throws(() => validateStudyCount(21, 'FREE'), /1 to 20/)
+  assert.equal(validateStudyCount(50, 'PREMIUM'), 50)
+  for (const count of [0, 51, 1.5]) assert.throws(() => validateStudyCount(count, 'PREMIUM'), /1 to 50/)
+})
+
+test('AI provider errors explain common failures without exposing provider details', () => {
+  assert.match(describeAiProviderError({ status: 401, message: 'secret key' }), /authentication failed/)
+  assert.match(describeAiProviderError({ status: 429, code: 'insufficient_quota' }), /billing/)
+  assert.match(describeAiProviderError({ status: 429 }), /rate limit/)
+  assert.match(describeAiProviderError({ status: 404 }), /model/)
+  assert.doesNotMatch(describeAiProviderError({ status: 401, message: 'secret key' }), /secret key/)
+})
 
 test('AI actions return an explicit configuration error instead of mock success', async (context) => {
   const originalApiKey = env.aiApiKey

@@ -1,0 +1,68 @@
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
+import { beforeEach, expect, test, vi } from 'vitest'
+import AIAssistantPage from '../pages/ai/AIAssistantPage.jsx'
+import { listWorkspaces, getWorkspace } from '../services/workspaceService.js'
+import { listDocuments } from '../services/documentService.js'
+import { summarizeDocument, generateQuiz, generateFlashcards } from '../services/aiService.js'
+
+vi.mock('../services/workspaceService.js', () => ({ listWorkspaces: vi.fn(), getWorkspace: vi.fn() }))
+vi.mock('../services/documentService.js', () => ({ listDocuments: vi.fn() }))
+vi.mock('../services/aiService.js', () => ({ askAi: vi.fn(), confirmSuggestedTasks: vi.fn(), generateFlashcards: vi.fn(), generateQuiz: vi.fn(), suggestTaskDistribution: vi.fn(), summarizeDocument: vi.fn() }))
+vi.mock('../hooks/useAuth.js', () => ({ default: () => ({ user: { subscriptionPlan: 'FREE' } }) }))
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  listWorkspaces.mockResolvedValue({ data: { data: [{ _id: 'w1', name: 'Study' }] } })
+  getWorkspace.mockResolvedValue({ data: { data: { _id: 'w1', plan: 'PREMIUM' } } })
+  listDocuments.mockResolvedValue({ data: { data: [{ _id: 'd1', fileName: 'notes.pdf', fileType: 'application/pdf' }, { _id: 'd2', fileName: 'link', isLink: true }] } })
+  summarizeDocument.mockResolvedValue({ data: { data: { answer: 'Generated output' } } })
+  generateFlashcards.mockResolvedValue({ data: { data: { cards: [{ front: 'Thuật ngữ', back: 'Định nghĩa' }, { front: 'Câu hai', back: 'Đáp án hai' }] } } })
+  generateQuiz.mockResolvedValue({ data: { data: { questions: [{ question: 'Question?', options: ['A1', 'B1', 'C1', 'D1'], correctIndex: 1, explanation: 'Reason' }, { question: 'Question two?', options: ['A2', 'B2', 'C2', 'D2'], correctIndex: 0, explanation: 'A2 đúng vì tài liệu nói vậy.' }] } } })
+})
+
+test('AI tools send supported workspace documents and use workspace Premium entitlement', async () => {
+  render(<MemoryRouter><AIAssistantPage /></MemoryRouter>)
+  const summarize = await screen.findByRole('button', { name: /Summarize Document/i })
+  await waitFor(() => expect(summarize).toBeEnabled())
+  await waitFor(() => expect(screen.getByRole('button', { name: /Task Distribution/i })).toBeEnabled())
+  fireEvent.click(summarize)
+  await waitFor(() => expect(summarizeDocument).toHaveBeenCalledWith({ workspaceId: 'w1', documentIds: ['d1'] }))
+  expect(await screen.findByText('Generated output')).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: /Generate Flashcards/i }))
+  fireEvent.click(screen.getByRole('button', { name: 'Tạo bộ thẻ' }))
+  await waitFor(() => expect(generateFlashcards).toHaveBeenCalledWith({ workspaceId: 'w1', documentIds: ['d1'], count: 10 }))
+  fireEvent.click(await screen.findByRole('button', { name: /Mặt trước, nhấn để xem đáp án/ }))
+  expect(screen.getByText('Định nghĩa')).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: /Thẻ tiếp/ }))
+  expect(screen.getByText('Câu hai')).toBeInTheDocument()
+  expect(screen.queryByText('Định nghĩa')).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Đóng bộ thẻ' }))
+  await waitFor(() => expect(screen.getByRole('button', { name: /Generate Quiz/i })).toBeEnabled())
+  fireEvent.click(screen.getByRole('button', { name: /Generate Quiz/i }))
+  fireEvent.change(screen.getByLabelText('Số câu hỏi'), { target: { value: '' } })
+  expect(screen.getByText('Vui lòng nhập số câu hỏi bạn muốn tạo.')).toBeInTheDocument()
+  fireEvent.change(screen.getByLabelText('Số câu hỏi'), { target: { value: '21' } })
+  expect(screen.getByText(/Bạn có thể tạo tối đa 20 câu hỏi mỗi lần/)).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Đăng ký Premium' })).toHaveAttribute('href', '/premium')
+  fireEvent.click(screen.getByRole('button', { name: 'Tạo bài luyện tập' }))
+  expect(generateQuiz).not.toHaveBeenCalled()
+  fireEvent.change(screen.getByLabelText('Số câu hỏi'), { target: { value: '15' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Tạo bài luyện tập' }))
+  await waitFor(() => expect(generateQuiz).toHaveBeenCalledWith({ workspaceId: 'w1', documentIds: ['d1'], count: 15 }))
+  fireEvent.click(await screen.findByRole('radio', { name: /B1/ }))
+  expect(screen.queryByText('Question two?')).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: /Câu tiếp/ }))
+  expect(screen.getByText('Question two?')).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('radio', { name: /B2/ }))
+  fireEvent.click(screen.getByRole('button', { name: /Câu 1, đã trả lời/ }))
+  expect(screen.getByRole('radio', { name: /B1/ })).toBeChecked()
+  fireEvent.click(screen.getByRole('button', { name: 'Nộp bài và chấm điểm' }))
+  expect(screen.getByText('Kết quả: 1/2 câu đúng')).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Đóng bài' }))
+  expect(screen.getByText('Bạn chọn: B. B2')).toBeInTheDocument()
+  expect(screen.getByText('Đáp án đúng: A. A2')).toBeInTheDocument()
+  expect(screen.getByText('Giải thích của AI: A2 đúng vì tài liệu nói vậy.')).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Xác nhận đóng bài' }))
+  expect(screen.queryByRole('region', { name: 'Bài luyện tập' })).not.toBeInTheDocument()
+})

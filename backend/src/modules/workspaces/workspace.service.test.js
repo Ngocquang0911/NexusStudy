@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import mongoose from 'mongoose'
 import { AdminAuditLog } from '../admin/AdminAuditLog.js'
+import { Appointment } from '../appointments/Appointment.js'
 import { Document } from '../documents/Document.js'
 import { Notification } from '../notifications/Notification.js'
 import { Task } from '../tasks/Task.js'
@@ -21,6 +22,7 @@ import {
 import { User } from '../users/User.js'
 
 function mockMembershipSnapshot(context, userIds = ['owner-a', 'member-a']) {
+  context.mock.method(Appointment, 'deleteMany', async () => ({}))
   context.mock.method(WorkspaceMember, 'find', () => ({
     select: async () => userIds.map((userId) => ({ userId })),
   }))
@@ -380,6 +382,7 @@ test('admin deletion retains the archive for three days for members and the admi
 })
 
 test('admin can delete a legacy workspace whose owner membership is missing', async (context) => {
+  context.mock.method(Appointment, 'deleteMany', async () => ({}))
   context.mock.method(WorkspaceMember, 'find', () => ({ select: async () => [{ userId: 'member-a' }] }))
   let filter, update
   context.mock.method(Workspace, 'findOneAndUpdate', async (query, payload) => {

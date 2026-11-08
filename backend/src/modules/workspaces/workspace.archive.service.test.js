@@ -3,6 +3,7 @@ import { access, unlink, writeFile } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import test from 'node:test'
 import { Channel } from '../chat/Channel.js'
+import { Appointment } from '../appointments/Appointment.js'
 import { Message } from '../chat/Message.js'
 import { Document } from '../documents/Document.js'
 import { Evaluation } from '../evaluations/Evaluation.js'
@@ -236,7 +237,7 @@ test('scheduled purge removes only data scoped to the due Space and does not del
     select() { return this },
     lean: async () => [],
   }))
-  for (const model of [Message, Task, Poll, Evaluation, WorkspaceInvitation, Notification, Channel, Document, WorkspaceMember]) {
+  for (const model of [Message, Task, Poll, Evaluation, WorkspaceInvitation, Notification, Channel, Document, WorkspaceMember, Appointment]) {
     context.mock.method(model, 'deleteMany', async (filter) => operations.push([model.modelName, filter]))
   }
   context.mock.method(console, 'error', (...args) => { purgeError = args })
@@ -271,7 +272,7 @@ test('scheduled purge preserves physical uploads still referenced by another Spa
     context.mock.method(Document, 'exists', async (filter) => filter.fileUrl === fileUrl ? { _id: 'shared-document' } : null)
     context.mock.method(Task, 'exists', async () => null)
     context.mock.method(Message, 'exists', async () => null)
-    for (const model of [Message, Task, Poll, Evaluation, WorkspaceInvitation, Notification, Channel, Document, WorkspaceMember]) {
+    for (const model of [Message, Task, Poll, Evaluation, WorkspaceInvitation, Notification, Channel, Document, WorkspaceMember, Appointment]) {
       context.mock.method(model, 'deleteMany', async () => ({}))
     }
     context.mock.method(console, 'error', (...args) => { throw new Error(`Unexpected purge error: ${args[0]}`) })

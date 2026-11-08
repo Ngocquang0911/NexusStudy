@@ -1,4 +1,5 @@
 import { chat, confirmTaskSuggestions as confirmSuggestions, generateFlashcards, generateQuiz, suggestTasks, summarize } from './ai.service.js'
+import { getUserPlan } from '../plans/plan.service.js'
 
 async function handle(request, response, next, action, message) {
   try {
@@ -18,11 +19,11 @@ export function summarizeDocuments(request, response, next) {
 }
 
 export function createQuiz(request, response, next) {
-  return handle(request, response, next, () => generateQuiz({ workspaceId: request.aiWorkspaceId, documentIds: request.body.documentIds, count: request.body.count }), 'Quiz draft generated')
+  return handle(request, response, next, async () => generateQuiz({ workspaceId: request.aiWorkspaceId, documentIds: request.body.documentIds, count: request.body.count, plan: await getUserPlan(request.auth.userId) }), 'Quiz draft generated')
 }
 
 export function createFlashcards(request, response, next) {
-  return handle(request, response, next, () => generateFlashcards({ workspaceId: request.aiWorkspaceId, documentIds: request.body.documentIds, count: request.body.count }), 'Flashcard draft generated')
+  return handle(request, response, next, async () => generateFlashcards({ workspaceId: request.aiWorkspaceId, documentIds: request.body.documentIds, count: request.body.count, plan: await getUserPlan(request.auth.userId) }), 'Flashcard draft generated')
 }
 
 export function taskSuggestion(request, response, next) {

@@ -40,7 +40,7 @@ export async function validateAiDocuments(request, _response, next) {
     const documents = await Document.find({
       _id: { $in: documentIds },
       workspaceId: request.aiWorkspaceId,
-      expiresAt: { $gt: new Date() },
+      $or: [{ expiresAt: { $gt: new Date() } }, { expiresAt: null }],
     }).select('_id')
     if (documents.length !== documentIds.length) {
       const error = new Error('One or more documents are not accessible in this workspace')

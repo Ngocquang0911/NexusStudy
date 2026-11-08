@@ -1,5 +1,11 @@
 import { Bot, FileText, LoaderCircle, Paperclip, Send, Sparkles, User, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+
+function normalizeMathText(content) {
+  return content.replace(/\$\s*\\(?:rightarrow|to)\s*\$/g, '→').replace(/\$\s*\\leftarrow\s*\$/g, '←')
+}
 
 export default function AiChatWindow({
   messages = [],
@@ -58,7 +64,7 @@ export default function AiChatWindow({
             <Paperclip size={14} />
             <span>
               {selectedDocIds.length === 0
-                ? 'All Documents'
+                ? 'All supported documents (tools)'
                 : `${selectedDocIds.length} Document${selectedDocIds.length > 1 ? 's' : ''} Selected`}
             </span>
           </button>
@@ -80,9 +86,9 @@ export default function AiChatWindow({
               className={`doc-chip ${selectedDocIds.length === 0 ? 'selected' : ''}`}
               onClick={() => onDocSelectionChange([])}
             >
-              All Workspace Docs
+              All supported documents (up to 10)
             </button>
-            {documents.map((doc) => {
+            {documents.filter((doc) => !doc.isLink && ['text/plain', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(doc.fileType)).map((doc) => {
               const isSelected = selectedDocIds.includes(doc._id)
               return (
                 <button
@@ -122,7 +128,7 @@ export default function AiChatWindow({
                 <div className="msg-sender-title">
                   {msg.role === 'user' ? 'You' : 'NEXUS AI'}
                 </div>
-                <div className="msg-text-body">{msg.content}</div>
+                <div className="msg-text-body">{msg.role === 'user' ? msg.content : <div className="ai-markdown"><ReactMarkdown remarkPlugins={[remarkGfm]}>{normalizeMathText(msg.content || '')}</ReactMarkdown></div>}</div>
 
                 {/* Source Documents Reference Badge */}
                 {msg.sourceDocuments && msg.sourceDocuments.length > 0 && (
