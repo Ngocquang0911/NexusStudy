@@ -7,6 +7,7 @@ import {
   ChevronDown,
   ChevronRight,
   Clock,
+  Crown,
   FileText,
   FolderKanban,
   KeyRound,
@@ -53,6 +54,7 @@ export default function Topbar({ onMenu, onTogglePomodoro, pomodoroOpen = false,
   const navigate = useNavigate()
 
   const isAdmin = user?.systemRole === 'ADMIN'
+  const isPremium = !isAdmin && user?.subscriptionPlan === 'PREMIUM'
 
   const [showNotifs, setShowNotifs] = useState(false)
   const [showAccountMenu, setShowAccountMenu] = useState(false)
@@ -177,13 +179,14 @@ export default function Topbar({ onMenu, onTogglePomodoro, pomodoroOpen = false,
           <nav className="topbar-breadcrumb" aria-label="Breadcrumb">
             <Link
               to={isAdmin ? '/admin' : '/dashboard'}
-              className="breadcrumb-root"
+              className={`breadcrumb-root ${isPremium ? 'brand-premium' : ''}`}
               title={isAdmin ? 'Go to Administration Console' : 'Go to Dashboard'}
             >
               <BrandLogo markOnly className="topbar-brand-image" />
               <span className="brand-title">
                 NEXUS<span className="brand-title-light">{isAdmin ? 'ADMIN' : 'STUDY'}</span>
               </span>
+              {isPremium && <span className="brand-premium-badge"><Crown size={11} aria-hidden="true" /> Premium</span>}
               {isAdmin && (
                 <span className="topbar-admin-badge">
                   <ShieldCheck size={11} />

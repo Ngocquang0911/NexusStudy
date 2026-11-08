@@ -13,6 +13,13 @@ describe('Topbar account menu', () => {
 
   beforeEach(() => logout.mockClear())
 
+  test('shows the Premium brand only when the account plan is active', () => {
+    const { rerender } = render(<AuthContext.Provider value={{ user: { systemRole: 'STUDENT', subscriptionPlan: 'FREE' }, logout }}><MemoryRouter><Topbar /></MemoryRouter></AuthContext.Provider>)
+    expect(screen.queryByText('Premium')).not.toBeInTheDocument()
+    rerender(<AuthContext.Provider value={{ user: { systemRole: 'STUDENT', subscriptionPlan: 'PREMIUM' }, logout }}><MemoryRouter><Topbar /></MemoryRouter></AuthContext.Provider>)
+    expect(screen.getByText('Premium')).toBeInTheDocument()
+  })
+
   test('provides profile, password, and sign-out actions', () => {
     render(
       <AuthContext.Provider value={{

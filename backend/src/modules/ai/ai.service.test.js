@@ -3,7 +3,24 @@ import { randomUUID } from 'node:crypto'
 import { unlink, writeFile } from 'node:fs/promises'
 import test from 'node:test'
 import { env } from '../../config/env.js'
-import { chat, describeAiProviderError, extractDocumentText, suggestTasks, validateStudyCount } from './ai.service.js'
+import { chat, confirmTaskSuggestions, describeAiProviderError, extractDocumentText, suggestTasks, validateStudyCount } from './ai.service.js'
+import { WorkspaceMember } from '../workspaces/WorkspaceMember.js'
+import { Task } from '../tasks/Task.js'
+
+test('confirmed AI tasks accept only workspace members as assignees', async (context) => {
+  const memberId = '111111111111111111111111'
+  const outsiderId = '222222222222222222222222'
+  const deadline = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString()
+  const suggestion = { title: 'Task', description: '', difficulty: 'EASY', estimatedHours: 2, priority: 'MEDIUM', assignedTo: [memberId], deadline }
+  context.mock.method(WorkspaceMember, 'find', () => ({ select() { return this }, lean: async () => [{ userId: memberId }] }))
+  let inserted
+  context.mock.method(Task, 'insertMany', async (items) => { inserted = items; return items })
+  await confirmTaskSuggestions('creator', 'workspace', [suggestion])
+  assert.deepEqual(inserted[0].assignedTo, [memberId])
+  assert.equal(inserted[0].deadline, deadline)
+  assert.equal(inserted[0].reminders.length, 3)
+  await assert.rejects(confirmTaskSuggestions('creator', 'workspace', [{ ...suggestion, assignedTo: [outsiderId] }]), /members of this workspace/)
+})
 
 test('study item limits follow the requesting account plan', () => {
   assert.equal(validateStudyCount(10, 'FREE'), 10)

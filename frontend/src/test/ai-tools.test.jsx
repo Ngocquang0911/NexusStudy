@@ -2,11 +2,11 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, expect, test, vi } from 'vitest'
 import AIAssistantPage from '../pages/ai/AIAssistantPage.jsx'
-import { listWorkspaces, getWorkspace } from '../services/workspaceService.js'
+import { listWorkspaces, getWorkspace, getWorkspaceMembers } from '../services/workspaceService.js'
 import { listDocuments } from '../services/documentService.js'
-import { summarizeDocument, generateQuiz, generateFlashcards } from '../services/aiService.js'
+import { summarizeDocument, generateQuiz, generateFlashcards, suggestTaskDistribution, confirmSuggestedTasks } from '../services/aiService.js'
 
-vi.mock('../services/workspaceService.js', () => ({ listWorkspaces: vi.fn(), getWorkspace: vi.fn() }))
+vi.mock('../services/workspaceService.js', () => ({ listWorkspaces: vi.fn(), getWorkspace: vi.fn(), getWorkspaceMembers: vi.fn() }))
 vi.mock('../services/documentService.js', () => ({ listDocuments: vi.fn() }))
 vi.mock('../services/aiService.js', () => ({ askAi: vi.fn(), confirmSuggestedTasks: vi.fn(), generateFlashcards: vi.fn(), generateQuiz: vi.fn(), suggestTaskDistribution: vi.fn(), summarizeDocument: vi.fn() }))
 vi.mock('../hooks/useAuth.js', () => ({ default: () => ({ user: { subscriptionPlan: 'FREE' } }) }))
@@ -15,10 +15,28 @@ beforeEach(() => {
   vi.clearAllMocks()
   listWorkspaces.mockResolvedValue({ data: { data: [{ _id: 'w1', name: 'Study' }] } })
   getWorkspace.mockResolvedValue({ data: { data: { _id: 'w1', plan: 'PREMIUM' } } })
+  getWorkspaceMembers.mockResolvedValue({ data: { data: [] } })
   listDocuments.mockResolvedValue({ data: { data: [{ _id: 'd1', fileName: 'notes.pdf', fileType: 'application/pdf' }, { _id: 'd2', fileName: 'link', isLink: true }] } })
   summarizeDocument.mockResolvedValue({ data: { data: { answer: 'Generated output' } } })
   generateFlashcards.mockResolvedValue({ data: { data: { cards: [{ front: 'Thuật ngữ', back: 'Định nghĩa' }, { front: 'Câu hai', back: 'Đáp án hai' }] } } })
   generateQuiz.mockResolvedValue({ data: { data: { questions: [{ question: 'Question?', options: ['A1', 'B1', 'C1', 'D1'], correctIndex: 1, explanation: 'Reason' }, { question: 'Question two?', options: ['A2', 'B2', 'C2', 'D2'], correctIndex: 0, explanation: 'A2 đúng vì tài liệu nói vậy.' }] } } })
+})
+
+test('task planning uses the project goal and lets a member be selected before confirmation', async () => {
+  const memberId = '111111111111111111111111'
+  getWorkspaceMembers.mockResolvedValue({ data: { data: [{ userId: { _id: memberId, name: 'Lan' } }] } })
+  const deadline = new Date(Date.now() + 864000000).toISOString()
+  suggestTaskDistribution.mockResolvedValue({ data: { data: { suggestions: [{ title: 'Thiết kế', description: 'Thiết kế giao diện', reason: 'Cần làm trước', difficulty: 'EASY', estimatedHours: 2, priority: 'HIGH', deadline }] } } })
+  confirmSuggestedTasks.mockResolvedValue({ data: { data: [{}] } })
+  render(<MemoryRouter><AIAssistantPage /></MemoryRouter>)
+  await waitFor(() => expect(screen.getByRole('button', { name: /Task Distribution/i })).toBeEnabled())
+  fireEvent.click(screen.getByRole('button', { name: /Task Distribution/i }))
+  fireEvent.change(screen.getByLabelText('Mục tiêu hoặc yêu cầu của dự án'), { target: { value: 'Làm ứng dụng học nhóm' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Tạo đề xuất' }))
+  await waitFor(() => expect(suggestTaskDistribution).toHaveBeenCalledWith(expect.objectContaining({ workspaceId: 'w1', goal: 'Làm ứng dụng học nhóm', timeZone: expect.any(String) })))
+  fireEvent.change(await screen.findByLabelText('Phân công'), { target: { value: memberId } })
+  fireEvent.click(screen.getByRole('button', { name: /Add selected tasks/ }))
+  await waitFor(() => expect(confirmSuggestedTasks).toHaveBeenCalledWith(expect.objectContaining({ suggestions: [expect.objectContaining({ assignedTo: [memberId], deadline })] })))
 })
 
 test('AI tools send supported workspace documents and use workspace Premium entitlement', async () => {

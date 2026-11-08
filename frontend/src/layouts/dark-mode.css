@@ -33,6 +33,24 @@ body[data-workspace-theme="dark"] .ai-message-bubble .msg-sender-title { color: 
 body[data-workspace-theme="dark"] .ai-chat-window .source-tag { background: #473961; color: #e2d7ff; }
 body[data-workspace-theme="dark"] .ai-chat-window .source-documents-footer small { color: #c7bdd4; }
 
+/* Shared surfaces, controls and states across signed-in pages. */
+body[data-workspace-theme="dark"] :is(.task-card, .task-menu-dropdown, .message-dropdown, .attach-popover, .search-result-item, .archived-document, .task-feedback-item, .task-history-item, .contribution-progress-block, .assignee-select-list, .file-dropzone, .message-list-container, .chat-main-area) { background: #302a3d; color: #f2edf9; border-color: #51465f; }
+body[data-workspace-theme="dark"] .task-page-container .kanban-column { background: #211d2c; border-color: #40384e; }
+body[data-workspace-theme="dark"] .task-page-container .column-empty-placeholder { background: #2c2639; border-color: #655a73; color: #c5bbd2; }
+body[data-workspace-theme="dark"] .task-page-container .column-quick-add-btn { background: #302a3d; border-color: #655a73; color: #ded3ef; }
+body[data-workspace-theme="dark"] .task-page-container .column-quick-add-btn:hover { background: #403450; color: #fff; }
+body[data-workspace-theme="dark"] .task-card:hover { background: #393147; border-color: #8e79b6; }
+body[data-workspace-theme="dark"] :is(.task-card-title, .task-feedback-item strong, .task-history-item strong, .task-activity-section h3) { color: #f5f0fb; }
+body[data-workspace-theme="dark"] :is(.task-card-desc, .task-feedback-item p, .task-history-item small) { color: #c9bfd5; }
+body[data-workspace-theme="dark"] :is(.select-group, .search-modal-input-group, .channel-search-box) { background: #292333; color: #e9e1f1; border-color: #51465f; }
+body[data-workspace-theme="dark"] :is(.task-menu-dropdown button, .message-dropdown button, .poll-menu-dropdown button) { color: #eee7f7; }
+body[data-workspace-theme="dark"] :is(.task-menu-dropdown button:hover, .message-dropdown button:hover, .poll-menu-dropdown button:hover, .assignee-checkbox-item:hover) { background: #493b5a; }
+body[data-workspace-theme="dark"] :is(.task-progress-bar-bg, .task-card-footer) { border-color: #51465f; }
+body[data-workspace-theme="dark"] .task-progress-bar-bg { background: #51465f; }
+body[data-workspace-theme="dark"] :is(.notif-header, .notif-item.unread, .notif-item:hover) { background: #352d42; color: #eee7f7; border-color: #51465f; }
+body[data-workspace-theme="dark"] .calendar-page-container .calendar-date-cell.has-events { background: #372d48; }
+body[data-workspace-theme="dark"] .calendar-page-container .calendar-date-cell.selected { background: #44365d; }
+
 /* Account menu contrast and avatar controls in dark mode. */
 body[data-workspace-theme="dark"] .topbar-avatar-button { display: inline-flex; align-items: center; flex-direction: row; width: auto; height: 42px; padding: 4px 9px 4px 4px; border-color: #514660; border-radius: 999px; background: #30293c; }
 body[data-workspace-theme="dark"] .topbar-avatar-button:hover { background: #3b304b; border-color: #9a80d4; }

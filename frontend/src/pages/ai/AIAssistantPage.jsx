@@ -14,8 +14,16 @@ import {
   summarizeDocument,
 } from '../../services/aiService.js'
 import { listDocuments } from '../../services/documentService.js'
-import { getWorkspace, listWorkspaces } from '../../services/workspaceService.js'
+import { getWorkspace, getWorkspaceMembers, listWorkspaces } from '../../services/workspaceService.js'
 import './ai-suggestions.css'
+
+function localDateTime(value) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  const pad = (part) => String(part).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
 
 export default function AIAssistantPage() {
   const { workspaceId: paramWorkspaceId } = useParams()
@@ -44,6 +52,9 @@ export default function AIAssistantPage() {
   const [aiLoading, setAiLoading] = useState(false)
   const [error, setError] = useState('')
   const [taskSuggestions, setTaskSuggestions] = useState([])
+  const [taskGoal, setTaskGoal] = useState('')
+  const [showTaskSetup, setShowTaskSetup] = useState(false)
+  const [taskMembers, setTaskMembers] = useState([])
   const [selectedSuggestionIndexes, setSelectedSuggestionIndexes] = useState([])
   const [taskSuggestionNotice, setTaskSuggestionNotice] = useState('')
 
@@ -88,6 +99,10 @@ export default function AIAssistantPage() {
     setSelectedDocIds([])
     setDocuments([])
     setTaskSuggestions([])
+    setTaskGoal('')
+    setShowTaskSetup(false)
+    setTaskMembers([])
+    if (activeWsId) getWorkspaceMembers(activeWsId).then(({ data }) => setTaskMembers(data.data || [])).catch(() => setTaskMembers([]))
     setPracticeQuestions([])
     setPracticeAnswers({})
     setPracticeSubmitted(false)
@@ -140,6 +155,7 @@ export default function AIAssistantPage() {
   const handleQuickAction = async (actionType, startPractice = false) => {
     if (!activeWsId) return
     if (['QUIZ', 'FLASHCARDS'].includes(actionType) && !startPractice) { setSetupAction(actionType); setQuestionCount(10); setShowQuizSetup(true); return }
+    if (actionType === 'TASK_SUGGESTION' && !startPractice) { setShowTaskSetup(true); return }
     setError('')
     setTaskSuggestionNotice('')
     if (['QUIZ', 'FLASHCARDS'].includes(actionType) && (!Number.isInteger(Number(questionCount)) || Number(questionCount) < 1 || Number(questionCount) > (isPremiumUser ? 50 : 20))) return
@@ -164,7 +180,7 @@ export default function AIAssistantPage() {
       apiCall = generateFlashcards({ workspaceId: activeWsId, documentIds, count: Number(questionCount) })
     } else if (actionType === 'TASK_SUGGESTION') {
       promptText = 'Suggest workload distribution and task priorities.'
-      apiCall = suggestTaskDistribution({ workspaceId: activeWsId })
+      apiCall = suggestTaskDistribution({ workspaceId: activeWsId, goal: taskGoal.trim(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC' })
     }
 
     setMessages((prev) => [...prev, { role: 'user', content: promptText }])
@@ -195,6 +211,7 @@ export default function AIAssistantPage() {
       if (actionType === 'TASK_SUGGESTION') {
         const suggestions = aiData.suggestions || []
         setTaskSuggestions(suggestions)
+        setShowTaskSetup(false)
         setSelectedSuggestionIndexes(suggestions.map((_suggestion, index) => index))
         setMessages((prev) => [
           ...prev,
@@ -235,6 +252,7 @@ export default function AIAssistantPage() {
   const handleConfirmSuggestions = async () => {
     const selected = selectedSuggestionIndexes.map((index) => taskSuggestions[index]).filter(Boolean)
     if (!selected.length || !activeWsId) return
+    if (selected.some((item) => !item.deadline || !Number.isFinite(new Date(item.deadline).getTime()) || new Date(item.deadline).getTime() <= Date.now())) { setError('Vui lòng chọn ngày và giờ deadline trong tương lai cho từng task đã chọn.'); return }
     setAiLoading(true)
     setError('')
     setTaskSuggestionNotice('')
@@ -315,6 +333,8 @@ export default function AIAssistantPage() {
         isPremium={workspace?.plan === 'PREMIUM'}
       />
 
+      {showTaskSetup && <section className="surface-card task-planning-setup"><div className="practice-heading"><div><h2>Lập kế hoạch cùng AI</h2><p>Mô tả mục tiêu để AI đề xuất công việc phù hợp với nhóm.</p></div><button type="button" className="secondary-action" onClick={() => setShowTaskSetup(false)}>Đóng</button></div><label htmlFor="task-goal">Mục tiêu hoặc yêu cầu của dự án</label><textarea id="task-goal" value={taskGoal} maxLength={2000} onChange={(event) => setTaskGoal(event.target.value)} placeholder="Ví dụ: Hoàn thành ứng dụng quản lý thư viện trong 4 tuần..." /><small>AI cũng tham khảo các task hiện có. Kiểm tra lại thời gian và phân công trước khi thêm.</small><button type="button" className="primary-action" disabled={aiLoading || !taskGoal.trim()} onClick={() => handleQuickAction('TASK_SUGGESTION', true)}>{aiLoading ? 'Đang lập kế hoạch…' : 'Tạo đề xuất'}</button></section>}
+
       {flashcards.length > 0 && <section className="surface-card flashcard-panel" aria-label="Bộ thẻ ghi nhớ"><div className="practice-heading"><div><span className="practice-eyebrow">ÔN TẬP CÙNG AI</span><h2>Thẻ ghi nhớ</h2><p>Nhấn vào thẻ để xem mặt còn lại</p></div><button type="button" className="secondary-action" onClick={() => { setFlashcards([]); setFlashcardIndex(0); setFlashcardFlipped(false) }}>Đóng bộ thẻ</button></div><button type="button" className={`flashcard-face ${flashcardFlipped ? 'is-flipped' : ''}`} onClick={() => setFlashcardFlipped((value) => !value)} aria-label={flashcardFlipped ? 'Mặt sau, nhấn để xem mặt trước' : 'Mặt trước, nhấn để xem đáp án'}><span>{flashcardFlipped ? 'ĐÁP ÁN' : 'THUẬT NGỮ / CÂU HỎI'}</span><strong>{flashcardFlipped ? flashcards[flashcardIndex].back : flashcards[flashcardIndex].front}</strong><small>Nhấn để lật thẻ ↻</small></button><div className="flashcard-controls"><button type="button" className="secondary-action" disabled={flashcardIndex === 0} onClick={() => { setFlashcardIndex((index) => index - 1); setFlashcardFlipped(false) }}>← Thẻ trước</button><span aria-live="polite">{flashcardIndex + 1} / {flashcards.length}</span><button type="button" className="secondary-action" disabled={flashcardIndex === flashcards.length - 1} onClick={() => { setFlashcardIndex((index) => index + 1); setFlashcardFlipped(false) }}>Thẻ tiếp →</button></div><p className="practice-note">Thẻ do AI tạo, bạn nên đối chiếu với tài liệu gốc. Bộ thẻ sẽ mất khi tải lại trang.</p></section>}
 
       {showQuizSetup && <section className="surface-card practice-panel" aria-label="Practice setup"><div className="practice-heading"><div><h2>{setupAction === 'QUIZ' ? 'Tạo bài luyện tập' : 'Tạo bộ thẻ ghi nhớ'}</h2><p>Nhập số lượng bạn muốn tạo từ tài liệu đã chọn.</p></div><button type="button" className="secondary-action" onClick={() => setShowQuizSetup(false)}>Đóng</button></div><label htmlFor="practice-count">{setupAction === 'QUIZ' ? 'Số câu hỏi' : 'Số thẻ'}</label><input id="practice-count" type="number" min="1" max={isPremiumUser ? 50 : 20} step="1" value={questionCount} aria-describedby="practice-count-hint" onChange={(event) => setQuestionCount(event.target.value)} /><div id="practice-count-hint" aria-live="polite">{(!Number.isInteger(Number(questionCount)) || Number(questionCount) < 1 || Number(questionCount) > (isPremiumUser ? 50 : 20)) && <p className="practice-count-warning">{Number(questionCount) > (isPremiumUser ? 50 : 20) ? <>Bạn có thể tạo tối đa {isPremiumUser ? 50 : 20} {setupAction === 'QUIZ' ? 'câu hỏi' : 'thẻ'} mỗi lần.{!isPremiumUser && <> <Link to="/premium">Đăng ký Premium</Link> để nâng giới hạn lên 50.</>}</> : questionCount === '' ? `Vui lòng nhập số ${setupAction === 'QUIZ' ? 'câu hỏi' : 'thẻ'} bạn muốn tạo.` : `Vui lòng nhập số từ 1 đến ${isPremiumUser ? 50 : 20}.`}</p>}</div><button type="button" className="primary-action" disabled={aiLoading} onClick={() => handleQuickAction(setupAction, true)}>{aiLoading ? 'Đang tạo…' : setupAction === 'QUIZ' ? 'Tạo bài luyện tập' : 'Tạo bộ thẻ'}</button></section>}
@@ -343,9 +363,10 @@ export default function AIAssistantPage() {
             {taskSuggestions.map((suggestion, index) => {
               const checked = selectedSuggestionIndexes.includes(index)
               return (
-                <label className={`ai-suggestion-card ${checked ? 'selected' : ''}`} key={`${suggestion.title}-${index}`}>
+                <div className={`ai-suggestion-card ${checked ? 'selected' : ''}`} key={index}>
                   <input
                     type="checkbox"
+                    aria-label={`Chọn ${suggestion.title}`}
                     checked={checked}
                     onChange={() => setSelectedSuggestionIndexes((current) =>
                       checked ? current.filter((item) => item !== index) : [...current, index],
@@ -354,13 +375,16 @@ export default function AIAssistantPage() {
                   <span className="ai-suggestion-copy">
                     <strong>{suggestion.title}</strong>
                     <small>{suggestion.description}</small>
+                    {suggestion.reason && <small className="ai-suggestion-reason">Vì sao: {suggestion.reason}</small>}
                     <span className="ai-suggestion-meta">
                       <span>{suggestion.difficulty}</span>
                       <span><Clock3 size={12} /> {suggestion.estimatedHours}h</span>
                       <span>{suggestion.priority}</span>
                     </span>
+                    <label className="ai-assignee-label">Phân công <select value={suggestion.assignedTo?.[0] || ''} onChange={(event) => setTaskSuggestions((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, assignedTo: event.target.value ? [event.target.value] : [] } : item))}><option value="">Cả nhóm</option>{taskMembers.filter((member) => member.userId?._id).map((member) => <option key={member.userId._id} value={member.userId._id}>{member.userId.name}</option>)}</select></label>
+                    <label className="ai-assignee-label">Deadline dự kiến (giờ địa phương)<input type="datetime-local" value={localDateTime(suggestion.deadline)} onChange={(event) => { const value = event.target.value; setTaskSuggestions((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, deadline: value && Number.isFinite(new Date(value).getTime()) ? new Date(value).toISOString() : null } : item)) }} /></label>
                   </span>
-                </label>
+                </div>
               )
             })}
           </div>

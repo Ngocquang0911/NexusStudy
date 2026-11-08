@@ -27,7 +27,7 @@ export function createFlashcards(request, response, next) {
 }
 
 export function taskSuggestion(request, response, next) {
-  return handle(request, response, next, () => suggestTasks({ workspaceId: request.aiWorkspaceId }), 'Task suggestions generated')
+  return handle(request, response, next, () => suggestTasks({ workspaceId: request.aiWorkspaceId, goal: request.body.goal, timeZone: request.body.timeZone }), 'Task suggestions generated')
 }
 
 export function confirmTaskSuggestions(request, response, next) {

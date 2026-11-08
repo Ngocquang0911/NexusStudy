@@ -977,6 +977,11 @@
   color: #8a8596;
   font-weight: 500;
 }
+.breadcrumb-root.brand-premium { position: relative; border-radius: 10px; text-shadow: 0 0 14px #e9ae4566; }
+.breadcrumb-root.brand-premium .brand-title, .breadcrumb-root.brand-premium .brand-title-light { color: #9a6308; font-weight: 800; }
+.brand-premium-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 7px; border: 1px solid #e5c777; border-radius: 999px; background: #fff4ce; color: #855808; font-size: 9px; font-weight: 800; letter-spacing: .02em; box-shadow: 0 0 12px #eab74c33; }
+body[data-workspace-theme="dark"] .breadcrumb-root.brand-premium .brand-title, body[data-workspace-theme="dark"] .breadcrumb-root.brand-premium .brand-title-light { color: #f8d578; }
+body[data-workspace-theme="dark"] .brand-premium-badge { color: #ffe5a0; background: #55401c; border-color: #98752d; box-shadow: 0 0 14px #f4bd5355; }
 
 .breadcrumb-sep {
   color: #bcb8c6;

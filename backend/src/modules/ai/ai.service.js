@@ -1,10 +1,13 @@
 import OpenAI from 'openai'
+import mongoose from 'mongoose'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { env } from '../../config/env.js'
 import { Document } from '../documents/Document.js'
 import { Task } from '../tasks/Task.js'
+import { WorkspaceMember } from '../workspaces/WorkspaceMember.js'
+import { defaultReminders } from '../tasks/task.service.js'
 
 const MAX_DOCUMENTS_PER_REQUEST = 10
 const MAX_CONTEXT_CHARACTERS = 40_000
@@ -214,13 +217,15 @@ export async function generateQuiz({ workspaceId, documentIds = [], count = 10, 
   return { questions, sourceDocuments: sources }
 }
 
-export async function suggestTasks({ workspaceId }) {
+export async function suggestTasks({ workspaceId, goal = '', timeZone = 'UTC' }) {
   requireAiConfiguration()
+  if (typeof goal !== 'string' || goal.length > 2000) throw aiError('Project goal must be at most 2,000 characters.', 400)
+  try { new Intl.DateTimeFormat('en', { timeZone }).format() } catch { throw aiError('Invalid time zone.', 400) }
   const tasks = await Task.find({ workspaceId }).select('title description status priority deadline estimatedHours difficulty').limit(100).lean()
   const taskContext = JSON.stringify(tasks).slice(0, MAX_CONTEXT_CHARACTERS)
   const answer = await complete(
-    'You are a study project planning assistant. Return only valid JSON with a "suggestions" array. Each item must have title, description, difficulty (EASY, MEDIUM, or HARD), estimatedHours (positive number), and priority (LOW, MEDIUM, HIGH, or URGENT). Suggest practical work based only on the workspace task context; do not duplicate completed tasks.',
-    `Create a proposed task list for this workspace. Existing tasks:\n${taskContext}\nReturn at most 12 suggestions.`,
+    'You are a study project planning assistant. Return only valid JSON with a "suggestions" array. Each item must have title, description with a clear deliverable, reason explaining the priority or estimate, difficulty (EASY, MEDIUM, or HARD), estimatedHours (positive number), priority (LOW, MEDIUM, HIGH, or URGENT), and deadline as a future ISO 8601 date and time with UTC offset. Deadlines are estimates for review, respect any stated overall deadline, and account for the given current time and timezone. Suggest practical work grounded in the project goal and existing tasks, avoid duplicates, and do not invent facts or member skills. Respond in Vietnamese.',
+    `Current time: ${new Date().toISOString()}. User timezone: ${timeZone}.\nProject goal: ${goal.trim() || 'Not provided; use only existing tasks.'}\nExisting tasks:\n${taskContext}\nReturn at most 12 suggestions.`,
   )
   let parsed
   try {
@@ -233,6 +238,8 @@ export async function suggestTasks({ workspaceId }) {
   const suggestions = parsed.suggestions.slice(0, 12).filter((item) => item && typeof item === 'object').map((item) => ({
     title: String(item.title || '').trim().slice(0, 200),
     description: String(item.description || '').trim().slice(0, 5000),
+    reason: String(item.reason || '').trim().slice(0, 1000),
+    deadline: typeof item.deadline === 'string' && /(?:Z|[+-]\d{2}:\d{2})$/i.test(item.deadline) && Number.isFinite(Date.parse(item.deadline)) && Date.parse(item.deadline) > Date.now() ? new Date(item.deadline).toISOString() : null,
     difficulty: ['EASY', 'MEDIUM', 'HARD'].includes(item.difficulty) ? item.difficulty : 'MEDIUM',
     estimatedHours: Number(item.estimatedHours),
     priority: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'].includes(item.priority) ? item.priority : 'MEDIUM',
@@ -252,14 +259,22 @@ export async function confirmTaskSuggestions(userId, workspaceId, suggestions) {
     difficulty: item.difficulty,
     estimatedHours: Number(item.estimatedHours),
     priority: item.priority,
+    assignedTo: Array.isArray(item.assignedTo) ? item.assignedTo.map(String) : [],
+    deadline: item.deadline || null,
   }))
   if (valid.some((item) =>
     !item.title || item.title.length > 200 || item.description.length > 5000 ||
     !['EASY', 'MEDIUM', 'HARD'].includes(item.difficulty) ||
     !Number.isFinite(item.estimatedHours) || item.estimatedHours <= 0 || item.estimatedHours > 10000 ||
-    !['LOW', 'MEDIUM', 'HIGH', 'URGENT'].includes(item.priority)
+    !['LOW', 'MEDIUM', 'HIGH', 'URGENT'].includes(item.priority) || item.assignedTo.length > 1 || item.assignedTo.some((id) => !mongoose.isValidObjectId(id)) || (item.deadline && (!Number.isFinite(Date.parse(item.deadline)) || Date.parse(item.deadline) <= Date.now()))
   )) {
     throw aiError('One or more selected task suggestions are invalid.', 400)
+  }
+  const assignedIds = [...new Set(valid.flatMap((item) => item.assignedTo))]
+  if (assignedIds.length) {
+    const members = await WorkspaceMember.find({ workspaceId, userId: { $in: assignedIds } }).select('userId').lean()
+    const allowed = new Set(members.map((member) => String(member.userId)))
+    if (assignedIds.some((id) => !allowed.has(id))) throw aiError('Selected assignees must be members of this workspace.', 400)
   }
   return Task.insertMany(valid.map((item) => ({
     workspaceId,
@@ -269,6 +284,9 @@ export async function confirmTaskSuggestions(userId, workspaceId, suggestions) {
     difficulty: item.difficulty,
     estimatedHours: item.estimatedHours,
     priority: item.priority,
+    assignedTo: item.assignedTo,
+    deadline: item.deadline,
+    reminders: defaultReminders(item.deadline),
     status: 'TODO',
     progress: 0,
     history: [{ actorId: userId, action: 'CREATED' }],

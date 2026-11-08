@@ -57,6 +57,14 @@
 .ai-suggestion-copy small { margin-top: 5px; color: var(--muted); font-size: 10px; line-height: 1.5; }
 .ai-suggestion-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
 .ai-suggestion-meta > span { display: inline-flex; align-items: center; gap: 4px; padding: 4px 6px; color: #5f5b72; background: #f0eff7; font-size: 8px; font-weight: 700; }
+body[data-workspace-theme="dark"] .ai-suggestion-card { background: #2c2639; border-color: #514660; }
+body[data-workspace-theme="dark"] .ai-suggestion-card.selected { background: #3a3050; border-color: #a58ae8; }
+body[data-workspace-theme="dark"] .ai-suggestion-card:hover { background: #423557; }
+body[data-workspace-theme="dark"] .ai-suggestion-copy strong { color: #f5f0ff; }
+body[data-workspace-theme="dark"] .ai-suggestion-copy small { color: #c8bdd7; }
+body[data-workspace-theme="dark"] .ai-suggestion-meta > span { background: #514363; color: #f0e8fa; }
+.task-planning-setup { padding: 24px; margin: 18px 0; }.task-planning-setup label, .task-planning-setup small { display: block; margin-bottom: 8px; color: var(--muted); }.task-planning-setup textarea { width: 100%; min-height: 95px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px; resize: vertical; }.task-planning-setup .primary-action { margin-top: 10px; }.ai-suggestion-reason { line-height: 1.5; }.ai-assignee-label { display: block; margin-top: 12px; color: var(--muted); font-size: 11px; }.ai-assignee-label select { display: block; max-width: 100%; margin-top: 5px; padding: 7px; border: 1px solid var(--line); border-radius: 7px; }
+.ai-assignee-label input[type="datetime-local"] { display: block; max-width: 100%; margin-top: 5px; padding: 7px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); }
 .practice-panel { padding: 24px; margin: 18px 0; }
 .practice-heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
 .practice-heading h2 { margin: 0 0 6px; color: var(--ink); font-size: 20px; }.practice-heading p, .practice-note { color: var(--muted); margin: 0; }
