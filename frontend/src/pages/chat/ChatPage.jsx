@@ -1,3 +1,4 @@
+import { readWorkspaceHeader } from '../../utils/workspaceHeaderCache.js'
 import { ArrowLeft, Hash, Lock, LoaderCircle, MessageSquare, Pin, Search, Users } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -14,6 +15,7 @@ import {
   editMessage,
   listChannels,
   listMessages,
+  openDirectConversation,
   sendMessage as sendRestMessage,
   togglePinMessage,
 } from '../../services/chatService.js'
@@ -27,14 +29,17 @@ export default function ChatPage() {
 
   const [workspaces, setWorkspaces] = useState([])
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState(paramWorkspaceId || '')
-  const [workspace, setWorkspace] = useState(null)
+  const [workspace, setWorkspace] = useState(() => readWorkspaceHeader(paramWorkspaceId))
   const [members, setMembers] = useState([])
 
   const [channels, setChannels] = useState([])
   const [activeChannel, setActiveChannel] = useState(null)
+  const [directLoading, setDirectLoading] = useState(false)
   const [messages, setMessages] = useState([])
+  const [suggestedDraft, setSuggestedDraft] = useState(null)
   const [loading, setLoading] = useState(true)
   const [messagesLoading, setMessagesLoading] = useState(false)
+  const messageRequestRef = useRef(0)
   const [error, setError] = useState('')
 
   // Modals & UI states
@@ -82,9 +87,8 @@ export default function ChatPage() {
       setMembers(memberRes.data.data || [])
       setWorkspace(wsRes.data.data || null)
 
-      if (chanList.length > 0 && !activeChannel) {
-        setActiveChannel(chanList[0])
-      }
+      setActiveChannel(chanList.find((channel) => !channel.directKey) || null)
+      setMessages([])
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load chat channels')
     } finally {
@@ -99,14 +103,16 @@ export default function ChatPage() {
   // Load messages whenever activeChannel changes
   const loadChannelMessages = useCallback(async (channelId) => {
     if (!channelId) return
+    const requestId = ++messageRequestRef.current
+    setMessages([])
     setMessagesLoading(true)
     try {
       const { data } = await listMessages(channelId, 50)
-      setMessages(data.data || [])
+      if (requestId === messageRequestRef.current) setMessages(data.data || [])
     } catch (err) {
       console.error('Failed to load messages:', err)
     } finally {
-      setMessagesLoading(false)
+      if (requestId === messageRequestRef.current) setMessagesLoading(false)
     }
   }, [])
 
@@ -167,7 +173,7 @@ export default function ChatPage() {
 
     const handleWorkspaceDeleted = ({ workspaceId }) => {
       if (workspaceId === activeWsId) {
-        navigate('/workspaces', { replace: true, state: { notice: 'This Space was deleted by its owner.' } })
+        navigate('/workspaces', { replace: true, state: { notice: 'This Space was deleted.' } })
       }
     }
 
@@ -193,6 +199,20 @@ export default function ChatPage() {
     setActiveChannel(channel)
     setTypingUsers([])
   }
+
+  const handleSelectMember = async (person) => {
+    setDirectLoading(true)
+    setError('')
+    try {
+      const { data } = await openDirectConversation(activeWsId, person._id)
+      const channel = data.data
+      setChannels((current) => [...current.filter((item) => item._id !== channel._id), channel])
+      handleSelectChannel(channel)
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to open direct conversation')
+    } finally { setDirectLoading(false) }
+  }
+  const directPeer = activeChannel?.directKey && members.find((member) => member.userId?._id !== user?._id && activeChannel.directKey.split(':').includes(member.userId?._id))?.userId
 
   const handleCreateChannelSubmit = async (formData) => {
     setCreateChannelLoading(true)
@@ -298,17 +318,17 @@ export default function ChatPage() {
   return (
     <div className="chat-page-container">
       {/* Workspace Header & Tabs if inside workspace context */}
-      {paramWorkspaceId && workspace ? (
+      {paramWorkspaceId ? (
         <div className="workspace-detail-header-block">
           <Link className="back-link" to="/workspaces">
             <ArrowLeft size={16} /> All workspaces
           </Link>
           <section className="workspace-hero">
-            <div className="workspace-hero-icon">{workspace.name.slice(0, 1).toUpperCase()}</div>
+            <div className="workspace-hero-icon">{workspace?.avatar ? <img src={workspace.avatar} alt="" /> : workspace?.name?.slice(0, 1).toUpperCase() || '…'}</div>
             <div>
-              <span className="eyebrow">{workspace.type}</span>
-              <h1>{workspace.name}</h1>
-              <p>{workspace.description || 'A focused space for your group to collaborate.'}</p>
+              <span className="eyebrow">{workspace?.type?.replaceAll('_', ' ') || 'WORKSPACE'}</span>
+              <h1>{workspace?.name || 'Loading workspace…'}</h1>
+              <p>{workspace?.description || 'A focused space for your group to collaborate.'}</p>
             </div>
           </section>
 
@@ -372,11 +392,13 @@ export default function ChatPage() {
           {/* Channels Sidebar */}
           <ChannelList
             channels={channels}
+            members={members}
+            currentUserId={user?._id}
+            onSelectMember={handleSelectMember}
+            directLoading={directLoading}
             activeChannelId={activeChannel?._id}
             onSelectChannel={handleSelectChannel}
             onOpenCreateModal={() => setIsCreateChannelOpen(true)}
-            isLeader={isLeader}
-            canCreateChannel={workspace?.plan === 'PREMIUM'}
           />
 
           {/* Main Channel Discussion Area */}
@@ -388,7 +410,8 @@ export default function ChatPage() {
                   <div className="channel-info-group">
                     {activeChannel.isPrivate ? <Lock size={18} /> : <Hash size={18} />}
                     <div>
-                      <h2>{activeChannel.name}</h2>
+                      <h2>{activeChannel.directKey ? (directPeer?.name || 'Direct message') : activeChannel.name}</h2>
+                      {activeChannel.directKey && <p className="channel-desc">Private conversation</p>}
                       {activeChannel.description && (
                         <p className="channel-desc">{activeChannel.description}</p>
                       )}
@@ -425,15 +448,17 @@ export default function ChatPage() {
                     pinnedMessages={pinnedMessages}
                     typingUsers={typingUsers}
                     currentUserId={user?._id}
-                    isLeader={isLeader}
+                    isLeader={isLeader && !activeChannel.directKey}
                     onPin={handlePinMessage}
                     onEdit={handleEditMessage}
                     onDelete={handleDeleteMessage}
+                    onChooseSuggestion={(text) => setSuggestedDraft({ text })}
                   />
                 )}
 
                 {/* Message Input Bar */}
                 <MessageInput
+                  suggestedDraft={suggestedDraft}
                   onSendMessage={handleSendMessage}
                   onTyping={handleTypingTrigger}
                   onStopTyping={handleStopTypingTrigger}

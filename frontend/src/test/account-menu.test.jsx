@@ -33,4 +33,28 @@ describe('Topbar account menu', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: /log out/i }))
     expect(logout).toHaveBeenCalledOnce()
   })
+
+  test('shows a theme shortcut in the user topbar', () => {
+    const toggle = vi.fn()
+    render(<AuthContext.Provider value={{ user: { systemRole: 'STUDENT' }, logout }}><MemoryRouter><Topbar theme="light" onToggleTheme={toggle} /></MemoryRouter></AuthContext.Provider>)
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to dark mode' }))
+    expect(toggle).toHaveBeenCalledOnce()
+  })
+
+  test('provides a Pomodoro trigger in the student dashboard header', () => {
+    const onTogglePomodoro = vi.fn()
+    render(
+      <AuthContext.Provider value={{
+        user: { name: 'Pham Quang', email: 'quang@example.com' },
+        logout,
+      }}>
+        <MemoryRouter>
+          <Topbar onTogglePomodoro={onTogglePomodoro} />
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle Pomodoro timer' }))
+    expect(onTogglePomodoro).toHaveBeenCalledOnce()
+  })
 })

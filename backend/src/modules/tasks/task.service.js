@@ -51,20 +51,19 @@ function normalizeProgress(status, progress) {
   return numericProgress
 }
 
-function defaultReminders(deadline) {
+export function defaultReminders(deadline) {
   if (!deadline) return []
   const dueAt = new Date(deadline).getTime()
   const now = Date.now()
   if (!Number.isFinite(dueAt) || dueAt <= now) return []
-  const timeRemaining = dueAt - now
-  return DEFAULT_REMINDER_OFFSETS
-    .map((offset, index) => new Date(dueAt - Math.min(offset, timeRemaining * (0.75 - index * 0.25))))
-    .sort((left, right) => left - right)
-    .map((sendAt) => ({ sendAt }))
+  const upcoming = DEFAULT_REMINDER_OFFSETS.map((offset) => dueAt - offset).filter((sendAt) => sendAt > now)
+  // For a task created inside the reminder window, send one prompt reminder.
+  if (!upcoming.length) upcoming.push(now + Math.min(60_000, (dueAt - now) / 2))
+  return upcoming.sort((left, right) => left - right).map((sendAt) => ({ sendAt: new Date(sendAt) }))
 }
 
 function canEditTask(task, userId, member) {
-  return isLeader(member) || task.assignedTo.some((assigneeId) => assigneeId.equals(userId))
+  return isLeader(member) || (Boolean(member) && task.assignedTo.length === 0) || task.assignedTo.some((assigneeId) => assigneeId.equals(userId))
 }
 
 function addTaskHistory(task, actorId, action, changes = []) {
@@ -73,7 +72,8 @@ function addTaskHistory(task, actorId, action, changes = []) {
 }
 
 async function notifyAssignees(task, recipientIds, actorId, activityId, type, title, message) {
-  const recipients = [...new Set(recipientIds.map((id) => id.toString()))]
+  const targetIds = recipientIds.length ? recipientIds : await WorkspaceMember.find({ workspaceId: task.workspaceId }).distinct('userId')
+  const recipients = [...new Set(targetIds.map((id) => id.toString()))]
     .filter((recipientId) => recipientId !== actorId.toString())
   await Promise.all(recipients.map((userId) => createTaskNotification({
     userId,
@@ -129,7 +129,7 @@ export async function createTask(userId, workspaceId, payload, member) {
     history: [{ actorId: userId, action: 'CREATED' }],
   })
   const activity = task.history[0]
-  await notifyAssignees(task, assignedTo, userId, activity._id, 'TASK_ASSIGNED', 'New task assigned', `You were assigned to "${task.title}".`)
+  await notifyAssignees(task, assignedTo, userId, activity._id, 'TASK_ASSIGNED', 'New task assigned', assignedTo.length ? `You were assigned to "${task.title}".` : `"${task.title}" is a task for the whole workspace.`)
   return task
 }
 

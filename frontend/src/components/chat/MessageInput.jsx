@@ -1,12 +1,17 @@
 import { Paperclip, Send, X } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-export default function MessageInput({ onSendMessage, onTyping, onStopTyping, disabled = false }) {
+export default function MessageInput({ onSendMessage, onTyping, onStopTyping, suggestedDraft, disabled = false }) {
   const [content, setContent] = useState('')
   const [attachments, setAttachments] = useState([])
   const [attachmentInput, setAttachmentInput] = useState('')
   const [showAttachModal, setShowAttachModal] = useState(false)
   const typingTimerRef = useRef(null)
+  const inputRef = useRef(null)
+
+  useEffect(() => {
+    if (suggestedDraft) { setContent(suggestedDraft.text); inputRef.current?.focus() }
+  }, [suggestedDraft])
 
   const handleTextChange = (e) => {
     setContent(e.target.value)
@@ -110,6 +115,7 @@ export default function MessageInput({ onSendMessage, onTyping, onStopTyping, di
         </button>
 
         <textarea
+          ref={inputRef}
           value={content}
           onChange={handleTextChange}
           onKeyDown={handleKeyDown}

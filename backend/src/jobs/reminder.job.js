@@ -7,6 +7,7 @@ import { Notification } from '../modules/notifications/Notification.js'
 import { Poll } from '../modules/polls/Poll.js'
 import { getUserPlan, PLAN_LIMITS } from '../modules/plans/plan.service.js'
 import { Task } from '../modules/tasks/Task.js'
+import { WorkspaceMember } from '../modules/workspaces/WorkspaceMember.js'
 import { ACTIVE_WORKSPACE_QUERY, Workspace } from '../modules/workspaces/Workspace.js'
 import { runDeletedWorkspaceRetentionJobs } from '../modules/workspaces/workspace.archive.service.js'
 import { expirePendingWorkspaceInvitations } from '../modules/workspaces/workspace.service.js'
@@ -89,9 +90,9 @@ async function deliverDueReminders(now) {
       if (!claimed) continue
 
       try {
-        const recipients = task.assignedTo.length ? task.assignedTo : [task.createdBy]
+        const recipients = task.assignedTo.length ? task.assignedTo : (await WorkspaceMember.find({ workspaceId: task.workspaceId }).populate('userId', 'name email')).map((member) => member.userId).filter(Boolean)
         for (const recipient of recipients) {
-          if (!recipient?.email) continue
+          if (!recipient?._id) continue
           await Notification.findOneAndUpdate(
             { userId: recipient._id, taskId: task._id, reminderKey: reminder._id.toString() },
             {

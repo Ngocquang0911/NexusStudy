@@ -7,6 +7,8 @@ import DashboardRoute from '../routes/DashboardRoute.jsx'
 import { AuthContext } from '../context/AuthContext.jsx'
 import { getAdminOverview, listAdminUsers, listAdminWorkspaces, updateAdminUserPlan, updateAdminUserRole } from '../services/adminService.js'
 import Sidebar from '../components/layout/Sidebar.jsx'
+import { listPremiumRequests } from '../services/premiumService.js'
+import { deleteAdminWorkspace, listReports } from '../services/reportService.js'
 
 vi.mock('../services/adminService.js', () => ({
   getAdminOverview: vi.fn(),
@@ -15,6 +17,9 @@ vi.mock('../services/adminService.js', () => ({
   updateAdminUserRole: vi.fn(),
   updateAdminUserPlan: vi.fn(),
 }))
+
+vi.mock('../services/premiumService.js', () => ({ listPremiumRequests: vi.fn(), reviewPremiumRequest: vi.fn() }))
+vi.mock('../services/reportService.js', () => ({ listReports: vi.fn(), resolveReport: vi.fn(), setUserLock: vi.fn(), deleteAdminWorkspace: vi.fn() }))
 
 vi.mock('../components/layout/CurrentWorkspace.jsx', () => ({ default: () => null }))
 
@@ -35,10 +40,21 @@ describe('Admin area', () => {
       recentActivity: [],
       recentUsers: [],
     } } })
+    listPremiumRequests.mockResolvedValue({ data: { data: [] } })
+    listReports.mockResolvedValue({ data: { data: { reports: [], pages: 1 } } })
     listAdminUsers.mockResolvedValue({ data: { data: { users: [], page: 1, pages: 1, total: 0 } } })
     listAdminWorkspaces.mockResolvedValue({ data: { data: { workspaces: [], page: 1, pages: 1, total: 0 } } })
     updateAdminUserRole.mockResolvedValue({ data: { data: { _id: 'student-id', name: 'Sam Student', email: 'sam@example.com', systemRole: 'LECTURER', createdAt: '2026-09-26T00:00:00.000Z' } } })
     updateAdminUserPlan.mockResolvedValue({ data: { data: { _id: 'student-id', name: 'Sam Student', email: 'sam@example.com', systemRole: 'STUDENT', subscriptionPlan: 'PREMIUM', createdAt: '2026-09-26T00:00:00.000Z' } } })
+  })
+
+  test('keeps the workspace list visible if deletion fails', async () => {
+    listAdminWorkspaces.mockResolvedValue({ data: { data: { workspaces: [{ _id: 'space-a', name: 'Study Space', status: 'ACTIVE', ownerId: { name: 'Owner' } }], page: 1, pages: 1, total: 1 } } })
+    deleteAdminWorkspace.mockRejectedValue({ response: { data: { message: 'Delete failed' } } })
+    render(<AuthContext.Provider value={{ user: { _id: 'admin-id', systemRole: 'ADMIN' } }}><MemoryRouter initialEntries={['/admin?section=workspaces']}><AdminPage /></MemoryRouter></AuthContext.Provider>)
+    fireEvent.click(await screen.findByRole('button', { name: 'Delete' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Delete failed')
+    expect(screen.getByText('Study Space')).toBeInTheDocument()
   })
 
   test('redirects a non-admin away from the admin route', () => {
@@ -77,12 +93,10 @@ describe('Admin area', () => {
 
     render(
       <AuthContext.Provider value={{ user: { _id: 'admin-id', systemRole: 'ADMIN' } }}>
-        <MemoryRouter><AdminPage /></MemoryRouter>
+        <MemoryRouter initialEntries={['/admin?section=users']}><AdminPage /></MemoryRouter>
       </AuthContext.Provider>,
     )
 
-    expect((await screen.findAllByText('4')).length).toBeGreaterThan(0)
-    fireEvent.click(screen.getByRole('button', { name: 'Users', exact: true }))
     const roleSelect = await screen.findByRole('combobox', { name: 'Role for Sam Student' })
     fireEvent.change(roleSelect, { target: { value: 'LECTURER' } })
 
@@ -106,6 +120,8 @@ describe('Admin area', () => {
 
     await waitFor(() => expect(listAdminUsers).toHaveBeenCalledWith({ search: '', role: '', plan: '', page: 1 }))
     expect(screen.getByRole('link', { name: 'User Management' })).toHaveClass('active')
+    expect(screen.getByRole('link', { name: 'System Overview' })).not.toHaveClass('active')
+    expect(screen.getByRole('link', { name: 'All Workspaces' })).not.toHaveClass('active')
     expect(screen.getByRole('heading', { name: 'User accounts' })).toBeInTheDocument()
   })
 
@@ -127,16 +143,26 @@ describe('Admin area', () => {
     expect(screen.getByRole('heading', { name: 'All workspaces' })).toBeInTheDocument()
   })
 
+  test('admin sidebar opens Premium requests and Reports without page tabs', async () => {
+    render(<AuthContext.Provider value={{ user: { _id: 'admin-id', systemRole: 'ADMIN' }, logout: vi.fn() }}><MemoryRouter initialEntries={['/admin']}><Routes><Route path="/admin" element={<><Sidebar /><AdminPage /></>} /></Routes></MemoryRouter></AuthContext.Provider>)
+    expect(screen.queryByRole('navigation', { name: 'Admin sections' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('link', { name: 'Premium requests' }))
+    expect(await screen.findByRole('heading', { name: 'Premium requests' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Premium requests' })).toHaveClass('active')
+    fireEvent.click(screen.getByRole('link', { name: 'Reports' }))
+    expect(await screen.findByRole('heading', { name: 'Reports' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Reports' })).toHaveClass('active')
+  })
+
   test('lets an admin manually grant the Premium plan', async () => {
     listAdminUsers.mockResolvedValue({ data: { data: { users: [{ _id: 'student-id', name: 'Sam Student', email: 'sam@example.com', systemRole: 'STUDENT', subscriptionPlan: 'FREE', createdAt: '2026-09-26T00:00:00.000Z' }], page: 1, pages: 1, total: 1 } } })
 
     render(
       <AuthContext.Provider value={{ user: { _id: 'admin-id', systemRole: 'ADMIN' } }}>
-        <MemoryRouter><AdminPage /></MemoryRouter>
+        <MemoryRouter initialEntries={['/admin?section=users']}><AdminPage /></MemoryRouter>
       </AuthContext.Provider>,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Users', exact: true }))
     fireEvent.change(await screen.findByRole('combobox', { name: 'Plan for Sam Student' }), { target: { value: 'PREMIUM' } })
 
     await waitFor(() => expect(updateAdminUserPlan).toHaveBeenCalledWith('student-id', 'PREMIUM', 'Approved admin operation'))
@@ -148,11 +174,9 @@ describe('Admin area', () => {
 
     render(
       <AuthContext.Provider value={{ user: { _id: 'admin-id', systemRole: 'ADMIN' } }}>
-        <MemoryRouter><AdminPage /></MemoryRouter>
+        <MemoryRouter initialEntries={['/admin?section=workspaces']}><AdminPage /></MemoryRouter>
       </AuthContext.Provider>,
     )
-
-    fireEvent.click(screen.getByRole('button', { name: 'All workspaces', exact: true }))
 
     expect(await screen.findByText('No workspaces have been created.')).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Open workspaces' })).not.toBeInTheDocument()
@@ -170,13 +194,12 @@ describe('Admin area', () => {
 
     render(
       <AuthContext.Provider value={{ user: { _id: 'admin-id', systemRole: 'ADMIN' } }}>
-        <MemoryRouter><AdminPage /></MemoryRouter>
+        <MemoryRouter initialEntries={['/admin?section=users']}><Sidebar /><AdminPage /></MemoryRouter>
       </AuthContext.Provider>,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Users', exact: true }))
     expect(await screen.findByText('Sam Student')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'All workspaces', exact: true }))
+    fireEvent.click(screen.getByRole('link', { name: 'All Workspaces' }))
 
     expect(await screen.findByRole('status')).toHaveTextContent('Loading workspaces...')
     expect(screen.queryByText('No workspaces have been created.')).not.toBeInTheDocument()

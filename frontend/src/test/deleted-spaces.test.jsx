@@ -51,11 +51,13 @@ const archive = {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.setSystemTime(new Date('2026-10-25T12:00:00.000Z'))
   listDeletedWorkspaces.mockResolvedValue({ data: { data: [space] } })
   listDeletedWorkspaceDocuments.mockResolvedValue({ data: { data: archive } })
 })
 
 afterEach(() => {
+  vi.useRealTimers()
   vi.restoreAllMocks()
 })
 

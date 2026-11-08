@@ -59,3 +59,24 @@ export function remove(request, response, next) {
 export function progress(request, response, next) {
   return handle(request, response, next, () => getWorkspaceProgress(request.params.workspaceId), 'Workspace progress retrieved')
 }
+
+
+export async function exportReport(request, response, next) {
+  try {
+    const tasks = await listTasks(request.params.workspaceId)
+    const csvCell = (value) => {
+      let text = String(value ?? '')
+      if (/^[\s]*[=+@\-\t\r]/.test(text)) text = "'" + text
+      return `"${text.replaceAll('"', '""')}"`
+    }
+    const rows = [['Task', 'Assignee', 'Email', 'Status', 'Progress (%)', 'Deadline', 'Completed at']]
+    for (const task of tasks) {
+      const assignees = task.assignedTo?.length ? task.assignedTo : [null]
+      const reportStatus = task.deadline && task.deadline < new Date() && !['DONE', 'CANCELLED'].includes(task.status) ? 'OVERDUE' : task.status
+      for (const person of assignees) rows.push([task.title, person?.name || 'Everyone in this workspace', person?.email || '', reportStatus, task.progress, task.deadline?.toISOString() || '', task.completedAt?.toISOString() || ''])
+    }
+    response.set('Content-Type', 'text/csv; charset=utf-8')
+    response.set('Content-Disposition', 'attachment; filename="task-report.csv"')
+    response.send('\ufeff' + rows.map((row) => row.map(csvCell).join(',')).join('\r\n'))
+  } catch (error) { next(error) }
+}

@@ -60,11 +60,13 @@ export default function CreatePollModal({ isOpen, onClose, onSubmit, loading = f
         expiresAt = new Date(data.customExpiresAt).toISOString()
       } else {
         const now = new Date()
+        const hours = { '1h': 1, '3h': 3, '5h': 5 }[data.duration]
         let days = 3
         if (data.duration === '1d') days = 1
         if (data.duration === '7d') days = 7
         if (data.duration === '14d') days = 14
-        now.setDate(now.getDate() + days)
+        if (hours) now.setTime(now.getTime() + hours * 60 * 60 * 1000)
+        else now.setDate(now.getDate() + days)
         expiresAt = now.toISOString()
       }
 
@@ -146,6 +148,9 @@ export default function CreatePollModal({ isOpen, onClose, onSubmit, loading = f
           <div className="form-group">
             <label htmlFor="poll-duration">Poll Expiration</label>
             <select id="poll-duration" {...register('duration')}>
+              <option value="1h">1 Hour</option>
+              <option value="3h">3 Hours</option>
+              <option value="5h">5 Hours</option>
               <option value="1d">1 Day</option>
               <option value="3d">3 Days</option>
               <option value="7d">7 Days</option>

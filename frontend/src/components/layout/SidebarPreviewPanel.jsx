@@ -17,7 +17,8 @@ import {
   LayoutDashboard,
   Link2,
   MessageSquare,
-  ShieldCheck,
+  Crown,
+  Flag,
   Sparkles,
   Star,
   Users,
@@ -277,11 +278,15 @@ export default function SidebarPreviewPanel({
       case 'ai':
         return { title: 'AI Assistant', icon: Bot }
       case 'admin-overview':
-        return { title: 'System Overview', icon: ShieldCheck }
+        return { title: 'System Overview', icon: LayoutDashboard }
       case 'admin-users':
         return { title: 'User Management', icon: Users }
       case 'admin-workspaces':
         return { title: 'All Workspaces', icon: FolderKanban }
+      case 'admin-premium':
+        return { title: 'Premium requests', icon: Crown }
+      case 'admin-reports':
+        return { title: 'Reports', icon: Flag }
       default:
         return { title: 'NexusStudy', icon: Sparkles }
     }
@@ -429,7 +434,7 @@ export default function SidebarPreviewPanel({
           <>
             <div className="flyout-note-banner">
               <Archive size={14} className="text-amber-400 shrink-0" />
-              <span>30-day retention archive before permanent purge.</span>
+              <span>Access archived documents until the displayed deadline.</span>
             </div>
 
             <div className="flyout-list">
@@ -904,39 +909,30 @@ export default function SidebarPreviewPanel({
       case 'admin-overview':
       case 'admin-users':
       case 'admin-workspaces':
-        return (
+      case 'admin-premium':
+      case 'admin-reports':
+        {
+          const items = {
+            'admin-overview': { label: 'System Overview', description: 'View platform metrics and activity', path: '/admin' },
+            'admin-users': { label: 'User Management', description: 'Manage user accounts, roles and plans', path: '/admin?section=users' },
+            'admin-workspaces': { label: 'All Workspaces', description: 'Review and manage workspaces', path: '/admin?section=workspaces' },
+            'admin-premium': { label: 'Premium requests', description: 'Review upgrade requests', path: '/admin?section=premium' },
+            'admin-reports': { label: 'Reports', description: 'Review user and workspace reports', path: '/admin?section=reports' },
+          }
+          const item = items[panelId]
+          return (
           <>
             <div className="flyout-list">
               <div className="flyout-list-label">Administration Console</div>
-              <button type="button" className="flyout-row" onClick={() => handleNavigate('/admin')}>
-                <ShieldCheck size={14} className="text-indigo-400 shrink-0" />
-                <div className="flyout-item-text">
-                  <span className="flyout-row-title">System Overview</span>
-                  <span className="flyout-row-sub">Platform metrics & audit logs</span>
-                </div>
-              </button>
-              <button type="button" className="flyout-row" onClick={() => handleNavigate('/admin?section=users')}>
-                <Users size={14} className="text-blue-400 shrink-0" />
-                <div className="flyout-item-text">
-                  <span className="flyout-row-title">User Management</span>
-                  <span className="flyout-row-sub">User roles & plans</span>
-                </div>
-              </button>
-              <button type="button" className="flyout-row" onClick={() => handleNavigate('/admin?section=workspaces')}>
-                <FolderKanban size={14} className="text-purple-400 shrink-0" />
-                <div className="flyout-item-text">
-                  <span className="flyout-row-title">All Workspaces</span>
-                  <span className="flyout-row-sub">Global workspace auditing</span>
-                </div>
-              </button>
+              <div className="flyout-row"><div className="flyout-item-text"><span className="flyout-row-sub">{item.description}</span></div></div>
             </div>
-
-            <button type="button" className="flyout-action-link" onClick={() => handleNavigate('/admin')}>
-              <span>Open Admin Console</span>
+            <button type="button" className="flyout-action-link" onClick={() => handleNavigate(item.path)}>
+              <span>Open {item.label}</span>
               <ArrowRight size={13} />
             </button>
           </>
         )
+        }
 
       default:
         return null

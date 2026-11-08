@@ -1,15 +1,16 @@
 import { Router } from 'express'
 import { requireAuth } from '../../middleware/auth.middleware.js'
 import { requireTaskMember, requireTaskReminderManager } from '../../middleware/task.middleware.js'
-import { requireWorkspaceLeader, requireWorkspaceMember } from '../../middleware/workspace.middleware.js'
+import { requireWorkspaceLeader, requireWorkspaceMember, requireWorkspaceOwner } from '../../middleware/workspace.middleware.js'
 import { requirePremium } from '../../middleware/plan.middleware.js'
-import { assign, create, createFeedback, getOne, list, progress, remove, update, updateReminders, updateStatus } from './task.controller.js'
+import { exportReport, assign, create, createFeedback, getOne, list, progress, remove, update, updateReminders, updateStatus } from './task.controller.js'
 
 const router = Router()
 
 router.use(requireAuth)
 router.post('/tasks', requireWorkspaceMember, create)
 router.get('/workspaces/:workspaceId/tasks', requireWorkspaceMember, list)
+router.get('/workspaces/:workspaceId/tasks/report.csv', requireWorkspaceMember, requireWorkspaceOwner, exportReport)
 router.get('/workspaces/:workspaceId/progress', requireWorkspaceMember, progress)
 router.get('/tasks/:id', requireTaskMember, getOne)
 router.put('/tasks/:id', requireTaskMember, update)

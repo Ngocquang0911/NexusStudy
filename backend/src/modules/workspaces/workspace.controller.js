@@ -14,6 +14,7 @@ import {
   removeMember,
   updateMemberRole,
   updateWorkspace,
+  setWorkspaceAvatar,
 } from './workspace.service.js'
 import { revokeWorkspaceSockets } from '../chat/chat.socket.js'
 
@@ -40,6 +41,10 @@ export function getOne(request, response, next) {
 
 export function update(request, response, next) {
   return handle(request, response, next, () => updateWorkspace(request.params.id, request.body), 'Workspace updated')
+}
+
+export function updateAvatar(request, response, next) {
+  return handle(request, response, next, () => setWorkspaceAvatar(request.params.id, request.avatarData), 'Workspace avatar updated')
 }
 
 export function remove(request, response, next) {

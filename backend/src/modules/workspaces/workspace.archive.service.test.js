@@ -62,7 +62,7 @@ test('deleted Space visibility is restricted to the snapshot of official members
   })
 })
 
-test('official members can view only unexpired documents from the permitted deleted Space', async (context) => {
+test('members can view documents valid at deletion throughout the archive period', async (context) => {
   const workspace = archivedWorkspace()
   const file = {
     _id: 'document-a',
@@ -86,7 +86,7 @@ test('official members can view only unexpired documents from the permitted dele
     }
   })
 
-  const result = await listDeletedWorkspaceDocuments('workspace-a', 'member-a', testNow)
+  const result = await listDeletedWorkspaceDocuments('workspace-a', 'member-a', new Date(testNow.getTime() + 24 * 60 * 60 * 1000))
 
   assert.equal(documentFilter.workspaceId, 'workspace-a')
   assert.equal(documentFilter.$or[0].expiresAt.$gt, testNow)
@@ -110,6 +110,7 @@ test('a member can download an eligible archive document but cannot substitute a
   })
   assert.equal(filter.workspaceId, 'workspace-a')
   assert.equal(filter._id, 'document-from-space-b')
+  assert.equal(filter.$or[0].expiresAt.$gt, testNow)
 })
 
 test('a snapshotted Owner is also allowed to download an eligible document', async (context) => {

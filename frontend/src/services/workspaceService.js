@@ -1,10 +1,12 @@
 import api from './api.js'
+import { rememberWorkspaceHeader, forgetWorkspaceHeader } from '../utils/workspaceHeaderCache.js'
 
 export const listWorkspaces = () => api.get('/workspaces')
 export const createWorkspace = (payload) => api.post('/workspaces', payload)
-export const getWorkspace = (workspaceId) => api.get(`/workspaces/${workspaceId}`)
-export const updateWorkspace = (workspaceId, payload) => api.put(`/workspaces/${workspaceId}`, payload)
-export const deleteWorkspace = (workspaceId) => api.delete(`/workspaces/${workspaceId}`)
+export const getWorkspace = (workspaceId) => api.get(`/workspaces/${workspaceId}`).then((response) => { rememberWorkspaceHeader(workspaceId, response.data.data); return response }).catch((error) => { forgetWorkspaceHeader(workspaceId); throw error })
+export const uploadWorkspaceAvatar = (workspaceId, file) => { const form = new FormData(); form.append('avatar', file); return api.put(`/workspaces/${workspaceId}/avatar`, form, { headers: { 'Content-Type': 'multipart/form-data' } }).then((response) => { forgetWorkspaceHeader(workspaceId); return response }) }
+export const updateWorkspace = (workspaceId, payload) => api.put(`/workspaces/${workspaceId}`, payload).then((response) => { forgetWorkspaceHeader(workspaceId); return response })
+export const deleteWorkspace = (workspaceId) => api.delete(`/workspaces/${workspaceId}`).then((response) => { forgetWorkspaceHeader(workspaceId); return response })
 export const listDeletedWorkspaces = () => api.get('/workspaces/deleted-spaces')
 export const listDeletedWorkspaceDocuments = (workspaceId) => api.get(`/workspaces/deleted-spaces/${workspaceId}/documents`)
 export const downloadDeletedWorkspaceDocument = (workspaceId, documentId) =>

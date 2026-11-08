@@ -216,7 +216,7 @@ export async function listAdminUsers(query) {
   }
 
   const [users, total] = await Promise.all([
-    User.find(filter).select('name email avatar systemRole subscriptionPlan createdAt updatedAt').sort({ createdAt: -1 }).skip(skip).limit(limit),
+    User.find(filter).select('name email avatar systemRole subscriptionPlan isLocked createdAt updatedAt').sort({ createdAt: -1 }).skip(skip).limit(limit),
     User.countDocuments(filter),
   ])
   const workspaceCounts = users.length ? await WorkspaceMember.aggregate([

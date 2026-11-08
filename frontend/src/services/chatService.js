@@ -1,5 +1,6 @@
 import api from './api.js'
 
+export const openDirectConversation = (workspaceId, userId) => api.post(`/workspaces/${workspaceId}/direct/${userId}`)
 export const listChannels = (workspaceId) => api.get(`/workspaces/${workspaceId}/channels`)
 export const createChannel = (workspaceId, payload) => api.post(`/workspaces/${workspaceId}/channels`, payload)
 export const updateChannel = (channelId, payload) => api.put(`/channels/${channelId}`, payload)

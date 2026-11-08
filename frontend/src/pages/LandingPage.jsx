@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   ArrowRight,
   BarChart3,
@@ -27,14 +27,45 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import BrandLogo from '../components/common/BrandLogo.jsx'
+import LivePomodoroSection from '../components/pomodoro/LivePomodoroSection.jsx'
 import './landing-page.css'
 
 export default function LandingPage() {
+  const landingPageRef = useRef(null)
   const [activeTab, setActiveTab] = useState('notes')
   const [isFlipped, setIsFlipped] = useState(false)
   const [openFaq, setOpenFaq] = useState(0)
+  const [isPomodoroOpen, setIsPomodoroOpen] = useState(false)
   const [timerRunning, setTimerRunning] = useState(false)
   const [timerSeconds, setTimerSeconds] = useState(1500) // 25:00
+
+  useEffect(() => {
+    const landingPage = landingPageRef.current
+    if (!landingPage || typeof IntersectionObserver === 'undefined') return
+
+    const revealTargets = landingPage.querySelectorAll('[data-scroll-reveal]')
+    if (revealTargets.length === 0) return
+
+    const observer = new IntersectionObserver(
+      (entries, currentObserver) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible')
+            currentObserver.unobserve(entry.target)
+          }
+        })
+      },
+      { threshold: 0.08, rootMargin: '0px 0px -40px 0px' },
+    )
+
+    landingPage.classList.add('landing-page--reveal-ready')
+    revealTargets.forEach((target) => observer.observe(target))
+
+    return () => {
+      observer.disconnect()
+      landingPage.classList.remove('landing-page--reveal-ready')
+    }
+  }, [])
 
   const toggleTimer = () => setTimerRunning(!timerRunning)
   const resetTimer = () => {
@@ -176,7 +207,7 @@ export default function LandingPage() {
   ]
 
   return (
-    <main className="landing-page">
+    <main className="landing-page" ref={landingPageRef}>
       {/* Decorative ambient background glows */}
       <div className="landing-glow landing-glow-top" aria-hidden="true" />
       <div className="landing-glow landing-glow-bottom" aria-hidden="true" />
@@ -194,6 +225,14 @@ export default function LandingPage() {
           <a href="#how-it-works">How it works</a>
           <a href="#tour">Workspace Tour</a>
           <a href="#features">Features</a>
+          <button
+            type="button"
+            aria-controls="pomodoro"
+            aria-expanded={isPomodoroOpen}
+            onClick={() => setIsPomodoroOpen((isOpen) => !isOpen)}
+          >
+            Live Pomodoro
+          </button>
           <a href="#faq">FAQ</a>
         </nav>
         <div className="landing-header-actions">
@@ -207,7 +246,7 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="landing-hero">
+      <section className="landing-hero" data-scroll-reveal>
         <div className="landing-hero-copy">
           <div className="landing-pill-announcement">
             <span className="landing-pill-tag">NEW</span>
@@ -227,9 +266,13 @@ export default function LandingPage() {
             <Link className="landing-button" to="/register">
               Get started for free <ArrowRight size={17} />
             </Link>
-            <a className="landing-secondary-link" href="#tour">
-              Explore interactive tour ↓
-            </a>
+            <button
+              type="button"
+              className="landing-secondary-link landing-secondary-link-button"
+              onClick={() => setIsPomodoroOpen(true)}
+            >
+              Start Live Pomodoro ⚡
+            </button>
           </div>
 
           <div className="landing-proof">
@@ -381,7 +424,7 @@ export default function LandingPage() {
       </section>
 
       {/* Metrics Counter Strip */}
-      <section className="landing-metrics-section">
+      <section className="landing-metrics-section" data-scroll-reveal>
         <div className="landing-metrics-container">
           <div className="landing-metrics-header">
             <span className="landing-kicker">POWERING BETTER STUDY HABITS</span>
@@ -420,7 +463,7 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works - 3 Step Visual Guide */}
-      <section className="landing-how" id="how-it-works">
+      <section className="landing-how" id="how-it-works" data-scroll-reveal>
         <div className="landing-section-heading">
           <span className="landing-kicker">STREAMLINED COLLABORATION</span>
           <h2>How NexusStudy transforms your study group</h2>
@@ -445,7 +488,7 @@ export default function LandingPage() {
       </section>
 
       {/* Interactive Workspace Tour (Tabs Switcher) */}
-      <section className="landing-tour" id="tour">
+      <section className="landing-tour" id="tour" data-scroll-reveal>
         <div className="landing-section-heading">
           <span className="landing-kicker">ALL-IN-ONE WORKSPACE</span>
           <h2>Everything your group needs, in one seamless flow</h2>
@@ -691,7 +734,7 @@ export default function LandingPage() {
       </section>
 
       {/* Bento Grid: Core Superpowers */}
-      <section className="landing-bento" id="features">
+      <section className="landing-bento" id="features" data-scroll-reveal>
         <div className="landing-section-heading">
           <span className="landing-kicker">ENGINEERED FOR SERIOUS RESULTS</span>
           <h2>Everything your group needs to move forward</h2>
@@ -769,8 +812,16 @@ export default function LandingPage() {
               </div>
               <div className="timer-attendees">
                 <Music size={13} className="lofi-icon" />
-                <span>Lofi study session · 4 crew members active</span>
+                <span>Distraction-free personal focus • Sound notifications</span>
               </div>
+              <button
+                type="button"
+                className="landing-secondary-link landing-secondary-link-button"
+                style={{ marginTop: '12px', display: 'inline-block', fontSize: '12px' }}
+                onClick={() => setIsPomodoroOpen(true)}
+              >
+                Open full Live Pomodoro workspace ↑
+              </button>
             </div>
           </div>
 
@@ -820,8 +871,11 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Live Pomodoro & Accountability Section */}
+      <LivePomodoroSection isOpen={isPomodoroOpen} onClose={() => setIsPomodoroOpen(false)} />
+
       {/* Student Testimonials ("Wall of Love") */}
-      <section className="landing-testimonials">
+      <section className="landing-testimonials" data-scroll-reveal>
         <div className="landing-section-heading">
           <span className="landing-kicker">LOVED BY STUDY GROUPS</span>
           <h2>Built for students who want to learn together</h2>
@@ -855,7 +909,7 @@ export default function LandingPage() {
       </section>
 
       {/* Interactive FAQ Section (Accordion) */}
-      <section className="landing-faq" id="faq">
+      <section className="landing-faq" id="faq" data-scroll-reveal>
         <div className="landing-section-heading">
           <span className="landing-kicker">FREQUENTLY ASKED QUESTIONS</span>
           <h2>Everything you need to know</h2>
@@ -887,7 +941,7 @@ export default function LandingPage() {
       </section>
 
       {/* High-Impact Modern CTA Banner */}
-      <section className="landing-cta-banner">
+      <section className="landing-cta-banner" data-scroll-reveal>
         <div className="cta-banner-card">
           <div className="cta-badge">
             <Sparkles size={14} /> YOUR NEXT STUDY SESSION STARTS HERE
@@ -913,7 +967,7 @@ export default function LandingPage() {
       </section>
 
       {/* Rich Multi-Column Modern Footer */}
-      <footer className="landing-footer-rich">
+      <footer className="landing-footer-rich" data-scroll-reveal>
         <div className="footer-columns-wrap">
           <div className="footer-col-brand">
             <Link className="landing-brand" to="/">
@@ -942,7 +996,13 @@ export default function LandingPage() {
 
           <div className="footer-col">
             <h4>RESOURCES</h4>
-            <a href="#features">Pomodoro Focus Timer</a>
+            <button
+              type="button"
+              className="footer-pomodoro-link"
+              onClick={() => setIsPomodoroOpen(true)}
+            >
+              Pomodoro Focus Timer
+            </button>
             <a href="#features">Active Recall Flashcards</a>
             <a href="#faq">Student FAQ</a>
             <a href="#how-it-works">Study Group Best Practices</a>

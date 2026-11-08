@@ -15,6 +15,7 @@ const DocumentsPage = lazy(() => import('../pages/document/DocumentsPage.jsx'))
 const EvaluationPage = lazy(() => import('../pages/evaluation/EvaluationPage.jsx'))
 const LandingPage = lazy(() => import('../pages/LandingPage.jsx'))
 const LoginPage = lazy(() => import('../pages/auth/LoginPage.jsx'))
+const PremiumPage = lazy(() => import('../pages/premium/PremiumPage.jsx'))
 const PollPage = lazy(() => import('../pages/poll/PollPage.jsx'))
 const ProfilePage = lazy(() => import('../pages/profile/ProfilePage.jsx'))
 const RegisterPage = lazy(() => import('../pages/auth/RegisterPage.jsx'))
@@ -57,6 +58,7 @@ export default function AppRoutes() {
             <Route path="/workspaces/:workspaceId/ai" element={<AIAssistantPage />} />
             <Route path="/ai" element={<AIAssistantPage />} />
             <Route path="/calendar" element={<CalendarPage />} />
+            <Route path="/premium" element={<PremiumPage />} />
             <Route path="/profile" element={<ProfilePage />} />
 
             <Route

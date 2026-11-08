@@ -115,7 +115,7 @@ export default function TaskFilters({ filters, setFilters, members = [], current
               <select value={filters.assignee} onChange={(e) => handleChange('assignee', e.target.value)}>
                 <option value="ALL">Assignee: All</option>
                 <option value={currentUserId}>Assigned to Me</option>
-                <option value="UNASSIGNED">Unassigned</option>
+                <option value="UNASSIGNED">Everyone in this workspace</option>
                 {members.map((member) => {
                   const mUser = member.userId || member
                   if (mUser._id === currentUserId) return null

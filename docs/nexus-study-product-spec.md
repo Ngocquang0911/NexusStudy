@@ -7,7 +7,7 @@
 ## Subscription entitlement scope
 
 - Workspace-count limits are evaluated against each user's own subscription.
-- Workspace-wide capabilities such as additional channels and pinned-item capacity follow the workspace owner's plan; a Premium member does not upgrade a Free-owned workspace.
+- Workspace members can create discussion channels. Workspace-wide pinned-item capacity follows the workspace owner's plan; a Premium member does not upgrade a Free-owned workspace.
 - Account capabilities such as AI assistance, custom reminders, contribution reports, and uploaded-file retention follow the acting account's plan. File expiry is recorded when uploaded and is not recalculated after a plan change.
 - Deleting a workspace removes its members, tasks, channels and messages, polls, evaluations, notifications, document metadata, and stored document files.
 

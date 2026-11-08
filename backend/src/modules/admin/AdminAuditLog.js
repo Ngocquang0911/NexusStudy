@@ -3,7 +3,7 @@ import mongoose from 'mongoose'
 const adminAuditLogSchema = new mongoose.Schema(
   {
     actorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    action: { type: String, required: true, enum: ['USER_ROLE_CHANGED', 'SUBSCRIPTION_PLAN_CHANGED', 'WORKSPACE_DELETED'], index: true },
+    action: { type: String, required: true, enum: ['USER_ROLE_CHANGED', 'SUBSCRIPTION_PLAN_CHANGED', 'WORKSPACE_DELETED', 'USER_LOCKED', 'USER_UNLOCKED'], index: true },
     targetType: { type: String, required: true, enum: ['USER', 'WORKSPACE'] },
     targetId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true },
     targetLabel: { type: String, required: true, maxlength: 200 },

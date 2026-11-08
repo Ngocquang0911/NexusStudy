@@ -4,6 +4,7 @@ import { env } from '../../config/env.js'
 import { WorkspaceMember } from '../workspaces/WorkspaceMember.js'
 import { ACTIVE_WORKSPACE_QUERY, Workspace } from '../workspaces/Workspace.js'
 import { findActiveWorkspaceMember } from '../../middleware/workspace.middleware.js'
+import { User } from '../users/User.js'
 import { Channel } from './Channel.js'
 import { Message } from './Message.js'
 import { createMessage, markChannelAsRead, pinMessage } from './chat.service.js'
@@ -67,12 +68,14 @@ function reportSocketError(error, acknowledge) {
 export function setupSocket(server) {
   const io = new Server(server, { cors: { origin: env.clientUrl } })
 
-  io.use((socket, next) => {
+  io.use(async (socket, next) => {
     const token = socket.handshake.auth?.token || socket.handshake.headers.authorization?.replace('Bearer ', '')
     if (!token) return next(socketError('Authentication required'))
     try {
       const payload = jwt.verify(token, env.jwtSecret)
       if (payload.tokenType !== 'access') return next(socketError('Access token required'))
+      const user = await User.findById(payload.userId).select('isLocked tokenVersion')
+      if (!user || user.isLocked || (user.tokenVersion || 0) !== (payload.tokenVersion || 0)) return next(socketError('Account is locked or session is no longer valid'))
       socket.auth = payload
       return next()
     } catch (_error) {
@@ -81,6 +84,10 @@ export function setupSocket(server) {
   })
 
   io.on('connection', (socket) => {
+    socket.join(`user:${socket.auth.userId}`)
+    socket.use(async (_packet, next) => {
+      try { const user = await User.findById(socket.auth.userId).select('isLocked tokenVersion'); if (!user || user.isLocked || (user.tokenVersion || 0) !== (socket.auth.tokenVersion || 0)) { socket.disconnect(true); return next(socketError('Session is no longer valid')) }; return next() } catch (error) { return next(error) }
+    })
     socket.on('joinWorkspace', async (payload = {}, acknowledge) => {
       try {
         const workspaceId = payload?.workspaceId

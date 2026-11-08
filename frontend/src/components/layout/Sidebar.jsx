@@ -2,10 +2,18 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   Archive,
+  Bell,
+  KeyRound,
+  Moon,
+  Rocket,
+  Sun,
+  UserRound,
   Bot,
   CalendarDays,
+  Crown,
   CheckSquare,
   FileText,
+  Flag,
   FolderKanban,
   LayoutDashboard,
   LogOut,
@@ -18,11 +26,12 @@ import {
 } from 'lucide-react'
 import useAuth from '../../hooks/useAuth.js'
 import { listWorkspaces } from '../../services/workspaceService.js'
+import NotificationPopover from '../common/NotificationPopover.jsx'
 import SidebarPreviewPanel from './SidebarPreviewPanel.jsx'
 
 const SELECTED_WORKSPACE_KEY = 'nexus.selectedWorkspaceId'
 
-export default function Sidebar({ open, onClose }) {
+export default function Sidebar({ open, onClose, theme = 'light', onToggleTheme }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -31,6 +40,16 @@ export default function Sidebar({ open, onClose }) {
 
   // Workspaces state for rail workspace tile & preview flyout
   const [workspaces, setWorkspaces] = useState([])
+  const [accountOpen, setAccountOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const accountRef = useRef(null)
+  useEffect(() => {
+    function closeMenu(event) { if (!accountRef.current?.contains(event.target)) { setAccountOpen(false); setNotificationsOpen(false) } }
+    function closeOnEscape(event) { if (event.key === 'Escape') { setAccountOpen(false); setNotificationsOpen(false) } }
+    document.addEventListener('pointerdown', closeMenu)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => { document.removeEventListener('pointerdown', closeMenu); document.removeEventListener('keydown', closeOnEscape) }
+  }, [])
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState(
     () => localStorage.getItem(SELECTED_WORKSPACE_KEY) || ''
   )
@@ -146,9 +165,11 @@ export default function Sidebar({ open, onClose }) {
 
   // Admin nav items
   const adminLinks = [
-    { id: 'admin-overview', label: 'System Overview', slug: 'overview', to: '/admin', icon: ShieldCheck },
+    { id: 'admin-overview', label: 'System Overview', slug: 'overview', to: '/admin', icon: LayoutDashboard },
     { id: 'admin-users', label: 'User Management', slug: 'users', to: '/admin?section=users', icon: Users },
     { id: 'admin-workspaces', label: 'All Workspaces', slug: 'workspaces', to: '/admin?section=workspaces', icon: FolderKanban },
+    { id: 'admin-premium', label: 'Premium requests', slug: 'premium', to: '/admin?section=premium', icon: Crown },
+    { id: 'admin-reports', label: 'Reports', slug: 'reports', to: '/admin?section=reports', icon: Flag },
     { id: 'deleted-spaces', label: 'Deleted Spaces Archive', slug: 'deleted-spaces', to: '/deleted-spaces', icon: Archive },
   ]
 
@@ -166,21 +187,14 @@ export default function Sidebar({ open, onClose }) {
         {/* Top: Current Workspace / Console tile */}
         <div className="rail-top">
           {isAdmin ? (
-            <button
-              type="button"
+            <div
               className="rail-workspace-tile admin-tile"
-              aria-label="System Administration Console"
-              title="System Administration Console"
-              onMouseEnter={(e) => handleFlyoutOpen('admin-overview', e)}
-              onMouseLeave={handleFlyoutClose}
-              onClick={() => {
-                setActiveFlyout(null)
-                onClose?.()
-                navigate('/admin')
-              }}
+              role="img"
+              aria-label="Admin console"
+              title="Admin console"
             >
               <ShieldCheck size={20} className="text-white" />
-            </button>
+            </div>
           ) : (
             <button
               type="button"
@@ -229,7 +243,7 @@ export default function Sidebar({ open, onClose }) {
                 <NavLink
                   key={slug}
                   to={to}
-                  className={`rail-link ${isActive ? 'active' : ''}`}
+                  className={() => `rail-link ${isActive ? 'active' : ''}`}
                   aria-label={label}
                   title={label}
                   onMouseEnter={(e) => handleFlyoutOpen(id, e)}
@@ -294,21 +308,23 @@ export default function Sidebar({ open, onClose }) {
 
         {/* Bottom: Profile Avatar & Logout */}
         <div className="rail-bottom">
-          <NavLink
-            to="/profile"
-            className="rail-user-avatar"
-            title={`View profile (${user?.name || 'User'})`}
-            aria-label="View Profile"
-            onClick={() => {
-              setActiveFlyout(null)
-              onClose?.()
-            }}
-          >
-            <span className={`rail-avatar-box ${isAdmin ? 'admin-avatar' : ''}`}>
-              {userInitials}
-            </span>
-            <span className="rail-avatar-dot" />
-          </NavLink>
+          <div className="rail-account-wrap" ref={accountRef}>
+            <button type="button" className="rail-user-avatar" aria-label="Open sidebar account menu" aria-expanded={accountOpen} aria-haspopup="menu" onClick={() => { setAccountOpen((value) => !value); setNotificationsOpen(false); setActiveFlyout(null) }}>
+              <span className={`rail-avatar-box ${isAdmin ? 'admin-avatar' : ''}`}>{user?.avatar ? <img src={user.avatar} alt="" /> : userInitials}</span><span className="rail-avatar-dot" />
+            </button>
+            {accountOpen && <div className="rail-account-menu" role="menu">
+              <div className="rail-account-identity"><span className="rail-account-photo">{user?.avatar ? <img src={user.avatar} alt="" /> : userInitials}</span><span><strong>{user?.name || 'User'}</strong><small>{user?.email || ''}</small></span></div>
+              <button type="button" role="menuitem" onClick={() => setNotificationsOpen((value) => !value)}><Bell size={16} /> Notifications</button>
+              {notificationsOpen && <div className="rail-notifications"><NotificationPopover isOpen onClose={() => setNotificationsOpen(false)} /></div>}
+              <div className="rail-account-divider" />
+              <NavLink to="/profile" role="menuitem" onClick={() => { setAccountOpen(false); onClose?.() }}><UserRound size={16} /> Profile</NavLink>
+              <NavLink to="/profile?tab=PASSWORD" role="menuitem" onClick={() => { setAccountOpen(false); onClose?.() }}><KeyRound size={16} /> Change password</NavLink>
+              {onToggleTheme && <button type="button" role="menuitem" onClick={onToggleTheme}>{theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />} {theme === 'dark' ? 'Light mode' : 'Dark mode'}</button>}
+              {!isAdmin && <NavLink to="/premium" role="menuitem" onClick={() => { setAccountOpen(false); onClose?.() }}><Rocket size={16} /> Upgrade workspace</NavLink>}
+              <div className="rail-account-divider" />
+              <button type="button" role="menuitem" className="rail-account-signout" onClick={handleLogout}><LogOut size={16} /> Log out</button>
+            </div>}
+          </div>
 
           <button
             type="button"

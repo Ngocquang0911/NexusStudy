@@ -4,12 +4,17 @@ import { useSearchParams } from 'react-router-dom'
 import useAuth from '../../hooks/useAuth.js'
 import { formatDate } from '../../utils/formatDate.js'
 import { getAdminOverview, getAdminWorkspace, listAdminUsers, listAdminWorkspaces, updateAdminUserPlan, updateAdminUserRole } from '../../services/adminService.js'
+import { listReports, resolveReport, setUserLock, deleteAdminWorkspace } from '../../services/reportService.js'
+import { listPremiumRequests, reviewPremiumRequest } from '../../services/premiumService.js'
 import './AdminPage.css'
+import './admin-refresh.css'
 
 const sections = [
   { id: 'overview', label: 'Overview' },
   { id: 'users', label: 'Users' },
   { id: 'workspaces', label: 'All workspaces' },
+  { id: 'premium', label: 'Premium requests' },
+  { id: 'reports', label: 'Reports' },
 ]
 
 function errorMessage(error) {
@@ -208,6 +213,7 @@ export default function AdminPage() {
   const [rowsSection, setRowsSection] = useState('')
   const [search, setSearch] = useState('')
   const deferredSearch = useDeferredValue(search)
+  const [reportStatus, setReportStatus] = useState('OPEN')
   const [roleFilter, setRoleFilter] = useState('')
   const [planFilter, setPlanFilter] = useState('')
   const [range, setRange] = useState('30d')
@@ -217,7 +223,19 @@ export default function AdminPage() {
   const [savingUser, setSavingUser] = useState('')
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [actionError, setActionError] = useState('')
   const [refresh, setRefresh] = useState(0)
+
+  useEffect(() => {
+    setSearch('')
+    setRoleFilter('')
+    setPlanFilter('')
+    setWorkspaceStatus('ALL')
+    setReportStatus('OPEN')
+    setPage(1)
+    setNotice('')
+    setActionError('')
+  }, [section])
 
   useEffect(() => {
     let active = true
@@ -230,6 +248,10 @@ export default function AdminPage() {
         ? listAdminUsers({ search: deferredSearch, role: roleFilter, plan: planFilter, page }).then(({ data }) => {
           if (active) { setRows(data.data.users); setRowsSection('users'); setPages(data.data.pages) }
         })
+        : section === 'reports'
+          ? listReports(reportStatus, page).then(({ data }) => { if (active) { setRows(data.data.reports); setRowsSection('reports'); setPages(data.data.pages || 1) } })
+        : section === 'premium'
+          ? listPremiumRequests().then(({ data }) => { if (active) { setRows(data.data || []); setRowsSection('premium'); setPages(1) } })
         : listAdminWorkspaces(
             workspaceStatus && workspaceStatus !== 'ALL'
               ? { search: deferredSearch, status: workspaceStatus, page }
@@ -255,7 +277,7 @@ export default function AdminPage() {
     })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
-  }, [section, deferredSearch, roleFilter, planFilter, workspaceStatus, page, refresh, range])
+  }, [section, deferredSearch, roleFilter, planFilter, workspaceStatus, page, refresh, range, reportStatus])
   const directoryLoading = loading || (section !== 'overview' && rowsSection !== section)
 
   function changeSection(nextSection) {
@@ -265,7 +287,41 @@ export default function AdminPage() {
     setPlanFilter('')
     setPage(1)
     setNotice('')
+    setReportStatus('OPEN')
     if (nextSection === 'workspaces') setWorkspaceStatus('ALL')
+  }
+
+  async function markPremiumReviewed(request) {
+    if (!window.confirm('Đánh dấu yêu cầu đã xem xét? Thao tác này không kích hoạt Premium.')) return
+    setSavingUser(request._id); setError(''); setNotice('')
+    try { await reviewPremiumRequest(request._id); setNotice('Request marked as reviewed. Premium has not been activated.'); setRefresh((value) => value + 1) }
+    catch (err) { setError(errorMessage(err)) }
+    finally { setSavingUser('') }
+  }
+
+  async function handleLock(target) {
+    const locked = !target.isLocked
+    if (!window.confirm(`${locked ? 'Lock' : 'Unlock'} ${target.name}? ${locked ? 'Existing sessions will be revoked.' : 'The user can sign in again.'}`)) return
+    const reason = window.prompt('Reason (required):')?.trim()
+    if (!reason) return
+    setSavingUser(target._id); setError(''); setNotice('')
+    try { await setUserLock(target._id, locked, reason); setNotice(`${target.name} ${locked ? 'locked' : 'unlocked'}.`); setRefresh((v) => v + 1) }
+    catch (err) { setError(errorMessage(err)) } finally { setSavingUser('') }
+  }
+  async function handleDeleteWorkspace(target) {
+    if (!window.confirm(`Delete “${target.name}”? Members lose access immediately. If the owner account no longer exists, the workspace and its data will be permanently deleted without an archive. Otherwise, eligible documents remain available for three days.`)) return
+    const reason = window.prompt('Reason for deletion (required):')?.trim()
+    if (!reason) return
+    setSavingUser(target._id); setActionError(''); setNotice('')
+    try { const { data } = await deleteAdminWorkspace(target._id, reason); setNotice(data.data.cleanupPending ? 'Workspace deletion started, but some cleanup needs attention.' : data.data.permanentlyDeleted ? 'Ownerless workspace permanently deleted.' : 'Workspace deleted.'); setRefresh((v) => v + 1) }
+    catch (err) { setActionError(errorMessage(err)) } finally { setSavingUser('') }
+  }
+  async function handleReport(report, status) {
+    const resolution = window.prompt(status === 'RESOLVED' ? 'Describe how this report was handled (at least 5 characters):' : 'Reason for dismissing this report (at least 5 characters):')?.trim()
+    if (!resolution || resolution.length < 5) return
+    setSavingUser(report._id); setError(''); setNotice('')
+    try { await resolveReport(report._id, status, resolution); setNotice('Report updated.'); setRefresh((v) => v + 1) }
+    catch (err) { setError(errorMessage(err)) } finally { setSavingUser('') }
   }
 
   async function changeRole(targetUser, systemRole) {
@@ -276,8 +332,8 @@ export default function AdminPage() {
     setNotice('')
     setError('')
     try {
-      const { data } = await updateAdminUserRole(targetUser._id, systemRole, reason)
-      setRows((current) => current.map((row) => row._id === targetUser._id ? data.data : row))
+      await updateAdminUserRole(targetUser._id, systemRole, reason)
+      setRefresh((value) => value + 1)
       setNotice(`Role updated for ${targetUser.name}.`)
     } catch (requestError) {
       setError(errorMessage(requestError))
@@ -295,8 +351,8 @@ export default function AdminPage() {
     setNotice('')
     setError('')
     try {
-      const { data } = await updateAdminUserPlan(targetUser._id, subscriptionPlan, reason)
-      setRows((current) => current.map((row) => row._id === targetUser._id ? data.data : row))
+      await updateAdminUserPlan(targetUser._id, subscriptionPlan, reason)
+      setRefresh((value) => value + 1)
       setNotice(`Plan updated for ${targetUser.name}.`)
     } catch (requestError) {
       setError(errorMessage(requestError))
@@ -310,9 +366,9 @@ export default function AdminPage() {
     <section className="admin-page">
       <header className="admin-heading">
         <div>
-          <span className="eyebrow">SYSTEM CONTROL</span>
+          <span className="eyebrow">NEXUS STUDY · ADMINISTRATION</span>
           <h1>Administration</h1>
-          <p>System oversight, user management, and workspace governance.</p>
+          <p>Monitor your platform and manage your community in one place.</p>
         </div>
         <button
           className="admin-refresh"
@@ -325,21 +381,8 @@ export default function AdminPage() {
         </button>
       </header>
 
-      <nav className="admin-tabs" aria-label="Admin sections">
-        {sections.map(({ id, label }) => (
-          <button
-            key={id}
-            type="button"
-            className={section === id ? 'active' : ''}
-            aria-current={section === id ? 'page' : undefined}
-            onClick={() => changeSection(id)}
-          >
-            {label}
-          </button>
-        ))}
-      </nav>
-
       {error && <p className="admin-alert" role="alert">{error}</p>}
+      {actionError && <p className="admin-alert" role="alert">{actionError}</p>}
       {notice && <p className="admin-notice" role="status">{notice}</p>}
 
       {section === 'overview' && (
@@ -364,9 +407,8 @@ export default function AdminPage() {
                 {[
                   ['Active users', overview.capabilities?.activeUsers],
                   ['AI usage', overview.capabilities?.aiUsage],
-                  ['Moderation reports', overview.capabilities?.reports],
                 ].filter(([, available]) => !available).map(([label]) => (
-                  <span key={label}>{label}: not tracked yet</span>
+                  <span key={label}><span className="admin-capability-dot" />{label}: not tracked yet</span>
                 ))}
               </div>
               <div className="admin-metric-groups">
@@ -536,6 +578,7 @@ export default function AdminPage() {
                     <th>Workspaces</th>
                     <th>System role</th>
                     <th>Plan</th>
+                    <th>Account status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -579,6 +622,7 @@ export default function AdminPage() {
                           <option value="PREMIUM">Premium</option>
                         </select>
                       </td>
+                      <td>{item.systemRole === 'ADMIN' ? 'Administrator' : <button type="button" className="admin-workspace-details-button" disabled={savingUser === item._id} onClick={() => handleLock(item)}>{item.isLocked ? 'Unlock' : 'Lock'}</button>} <small>{item.isLocked ? 'Locked' : 'Active'}</small></td>
                     </tr>
                   ))}
                 </tbody>
@@ -589,6 +633,10 @@ export default function AdminPage() {
           {!directoryLoading && pages > 1 && <Pagination page={page} pages={pages} onChange={setPage} />}
         </section>
       )}
+
+      {section === 'reports' && <section className="admin-panel admin-directory"><div className="admin-panel-heading"><div><h2>Reports</h2><p>Review reports, take action when appropriate, and record the outcome.</p></div></div><div className="admin-toolbar"><select aria-label="Filter reports by status" value={reportStatus} onChange={(event) => { setReportStatus(event.target.value); setPage(1) }}><option value="OPEN">Open</option><option value="RESOLVED">Resolved</option><option value="DISMISSED">Dismissed</option></select></div>{directoryLoading ? <p className="admin-empty" role="status">Loading reports...</p> : error ? <p className="admin-empty">Unable to load reports.</p> : <div className="report-list">{rows.map((item) => <article className="admin-report-card" key={item._id}><div className="admin-report-meta"><strong>{item.targetType === 'USER' ? 'Member' : 'Workspace'}: {item.target?.name || 'Unavailable'}</strong><span>{formatDate(item.createdAt)}</span></div><p>{item.reason}</p><small>Reported by {item.reporterId?.name || 'Unavailable'} · Workspace: {item.workspaceId?.name || 'Unavailable'}</small>{item.resolution && <p>Outcome: {item.resolution}</p>}{item.status === 'OPEN' && <div className="admin-report-actions">{item.targetType === 'USER' && item.target && <button type="button" onClick={() => handleLock(item.target)} disabled={savingUser === item._id}>{item.target.isLocked ? 'Unlock user' : 'Lock user'}</button>}{item.targetType === 'WORKSPACE' && item.target && <button type="button" onClick={() => handleDeleteWorkspace(item.target)} disabled={savingUser === item._id}>Delete workspace</button>}<button type="button" onClick={() => handleReport(item, 'RESOLVED')} disabled={savingUser === item._id}>Resolve</button><button type="button" onClick={() => handleReport(item, 'DISMISSED')} disabled={savingUser === item._id}>Dismiss</button></div>}</article>)}{!rows.length && <p className="admin-empty">No reports in this status.</p>}</div>}{!directoryLoading && pages > 1 && <Pagination page={page} pages={pages} onChange={setPage} />}</section>}
+
+      {section === 'premium' && <section className="admin-panel admin-directory"><div className="admin-panel-heading"><div><h2>Premium requests</h2><p>Requests do not represent payment or activate Premium. Review and manage account plans separately.</p></div></div>{directoryLoading ? <p className="admin-empty" role="status">Loading requests...</p> : error ? <p className="admin-empty">Unable to load requests.</p> : <div className="admin-table-scroll"><table className="admin-table"><thead><tr><th>Account</th><th>Plan</th><th>Price</th><th>Requested</th><th>Action</th></tr></thead><tbody>{rows.map((item) => <tr key={item._id}><td>{item.userId?.name || 'Unavailable account'}<small className="admin-room-description">{item.userId?.email}</small></td><td>{{ MONTHLY: '1 month', SIX_MONTHS: '6 months', YEARLY: '1 year' }[item.plan]}</td><td>{Number(item.priceVnd).toLocaleString('vi-VN')} đ</td><td>{formatDate(item.createdAt)}</td><td><button type="button" className="admin-workspace-details-button" disabled={savingUser === item._id} onClick={() => markPremiumReviewed(item)}>Mark reviewed</button></td></tr>)}</tbody></table>{!rows.length && <p className="admin-empty">No pending Premium requests.</p>}</div>}</section>}
 
       {section === 'workspaces' && (
         <section className="admin-workspaces">
@@ -672,6 +720,7 @@ export default function AdminPage() {
                           >
                             <Eye size={15} /> View
                           </button>
+                          {item.status !== 'DELETED' && item.status !== 'PURGING' && <button type="button" className="admin-delete-workspace" disabled={savingUser === item._id} onClick={() => handleDeleteWorkspace(item)}>Delete</button>}
                         </td>
                       </tr>
                     ))}

@@ -334,6 +334,7 @@ export default function TaskModal({
           {workspaceMembers.length > 0 && (
             <div className="form-group">
               <label>Assign To ({assignedToValues.length} selected)</label>
+              <small className="muted-hint">Leave empty to assign this task to everyone in this workspace.</small>
               {!isLeader && <small className="muted-hint">Only workspace leaders can change assignees.</small>}
               <div className="assignee-select-list">
                 {workspaceMembers.map((member) => {

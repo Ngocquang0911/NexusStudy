@@ -5,7 +5,7 @@ import { Notification } from '../notifications/Notification.js'
 import { User } from '../users/User.js'
 import { WorkspaceMember } from '../workspaces/WorkspaceMember.js'
 import { Task } from './Task.js'
-import { addTaskFeedback, updateTask, updateTaskReminders } from './task.service.js'
+import { addTaskFeedback, defaultReminders, updateTask, updateTaskReminders } from './task.service.js'
 
 test('task feedback records activity and notifies only its selected recipient', async (context) => {
   const actorId = new mongoose.Types.ObjectId()
@@ -113,4 +113,26 @@ test('a Premium task creator can set a custom reminder schedule', async (context
 
   assert.equal(task.reminders.length, 1)
   assert.equal(task.reminders[0].sendAt.getTime(), sendAt.getTime())
+})
+
+
+test('default reminders schedule three days, one day and two hours before a deadline, or soon for short deadlines', () => {
+  const now = Date.now()
+  const deadline = new Date(now + 5 * 86400000)
+  const reminders = defaultReminders(deadline)
+  assert.deepEqual(reminders.map((item) => deadline.getTime() - item.sendAt.getTime()), [3 * 86400000, 86400000, 2 * 3600000])
+  const short = defaultReminders(new Date(now + 3600000))
+  assert.equal(short.length, 1)
+  assert.ok(short[0].sendAt.getTime() > now)
+  assert.deepEqual(defaultReminders(new Date(now - 1000)), [])
+})
+
+test('workspace members can update a shared task but not another member’s assigned task', async (context) => {
+  const actorId = new mongoose.Types.ObjectId()
+  const task = new Task({ workspaceId: new mongoose.Types.ObjectId(), title: 'Shared work', createdBy: new mongoose.Types.ObjectId(), assignedTo: [], status: 'TODO' })
+  context.mock.method(task, 'save', async function saveTask() { return this })
+  await updateTask(task, actorId, { role: 'MEMBER' }, { status: 'IN_PROGRESS', progress: 25 })
+  assert.equal(task.progress, 25)
+  task.assignedTo = [new mongoose.Types.ObjectId()]
+  await assert.rejects(updateTask(task, actorId, { role: 'MEMBER' }, { progress: 50 }), { statusCode: 403 })
 })

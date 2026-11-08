@@ -61,7 +61,8 @@
    HEADER
    ========================================================================== */
 .landing-header {
-  position: relative;
+  position: sticky;
+  top: 0;
   z-index: 10;
   width: min(100% - 64px, 1240px);
   height: 82px;
@@ -70,6 +71,7 @@
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--landing-border);
+  background: #fff;
 }
 
 .landing-brand {
@@ -96,7 +98,21 @@
   transition: color .18s ease;
   position: relative;
 }
+.landing-nav button {
+  border: 0;
+  padding: 0;
+  color: #555160;
+  background: transparent;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color .18s ease;
+}
 .landing-nav a:hover {
+  color: var(--landing-purple);
+}
+.landing-nav button:hover {
   color: var(--landing-purple);
 }
 
@@ -225,6 +241,13 @@
 }
 .landing-secondary-link:hover {
   color: var(--landing-purple);
+}
+.landing-secondary-link-button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
 }
 
 .landing-proof {
@@ -1780,6 +1803,22 @@
 .footer-col a:hover {
   color: var(--landing-purple);
 }
+.footer-pomodoro-link {
+  display: block;
+  border: 0;
+  padding: 0;
+  margin-bottom: 11px;
+  color: var(--landing-muted);
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: color .16s ease;
+}
+.footer-pomodoro-link:hover {
+  color: var(--landing-purple);
+}
 
 .footer-bottom-bar {
   width: min(100%, 1160px);
@@ -1901,5 +1940,26 @@
   }
   .bento-card {
     padding: 24px 20px;
+  }
+}
+
+.landing-page--reveal-ready [data-scroll-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 28px, 0);
+  transition:
+    opacity 650ms ease,
+    transform 650ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.landing-page--reveal-ready [data-scroll-reveal].is-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-page--reveal-ready [data-scroll-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }

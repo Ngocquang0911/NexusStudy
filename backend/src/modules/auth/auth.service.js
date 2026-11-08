@@ -146,6 +146,7 @@ export async function verifyEmail({ email, code }) {
     {
       email,
       emailVerified: false,
+      isLocked: { $ne: true },
       emailVerificationExpiresAt: { $gt: new Date() },
       emailVerificationAttempts: { $lt: MAX_VERIFICATION_ATTEMPTS },
     },
@@ -165,6 +166,7 @@ export async function verifyEmail({ email, code }) {
     {
       _id: user._id,
       emailVerified: false,
+      isLocked: { $ne: true },
       emailVerificationCodeHash: user.emailVerificationCodeHash,
       emailVerificationExpiresAt: { $gt: new Date() },
     },
@@ -212,6 +214,7 @@ export async function loginUser({ username, email, account, password }) {
     error.statusCode = 401
     throw error
   }
+  if (user.isLocked) throw authError('This account is locked.', 403, 'ACCOUNT_LOCKED')
   if (!user.emailVerified) {
     const error = authError('Verify your email before logging in.', 403, 'EMAIL_NOT_VERIFIED')
     error.email = user.email
@@ -237,8 +240,8 @@ export async function refreshAccessToken(refreshToken) {
   }
 
   const user = await User.findById(payload.userId)
-  if (!user) {
-    const error = new Error('User not found')
+  if (!user || user.isLocked || (user.tokenVersion || 0) !== (payload.tokenVersion || 0)) {
+    const error = new Error('Invalid or expired refresh token')
     error.statusCode = 401
     throw error
   }

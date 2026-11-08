@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowUpRight, CalendarDays, CheckCircle2, FolderKanban, LoaderCircle, Plus, Sparkles } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, CalendarDays, CheckCircle2, ClipboardList, FolderKanban, LoaderCircle, Plus, Sparkles } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import useAuth from '../../hooks/useAuth.js'
 import { listTasks } from '../../services/taskService.js'
@@ -36,7 +36,8 @@ export default function DashboardPage() {
   }, [])
 
   const openTasks = tasks.filter((task) => !['DONE', 'CANCELLED'].includes(task.status))
-  const upcomingTasks = openTasks.filter((task) => task.deadline && getTaskBoardStatus(task) !== 'OVERDUE').sort((a, b) => new Date(a.deadline) - new Date(b.deadline)).slice(0, 4)
+  const upcomingTasks = openTasks.filter((task) => task.deadline && getTaskBoardStatus(task) !== 'OVERDUE').sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
+  const overdueTasks = openTasks.filter((task) => getTaskBoardStatus(task) === 'OVERDUE')
   const completed = tasks.filter((task) => task.status === 'DONE').length
   const activeTaskCount = tasks.filter((task) => task.status !== 'CANCELLED').length
   const progress = activeTaskCount ? Math.round((completed / activeTaskCount) * 100) : 0
@@ -47,8 +48,45 @@ export default function DashboardPage() {
   if (loading) return <div className="route-loading"><LoaderCircle className="spin" size={22} /> Loading your dashboard...</div>
   if (error) return <section className="dashboard-page"><div className="inline-error" role="alert">{error}</div></section>
 
-  return <div className="dashboard-page"><section className="welcome-row"><div><span className="eyebrow">{today}</span><h1>{greeting}, {user?.name?.split(' ')[0] || 'student'}.</h1><p>Your workspace for clearer collaboration starts here.</p></div><button className="primary-action" onClick={() => navigate('/workspaces')}><Plus size={17} /> Create workspace</button></section><section className="stats-row"><Stat label="Active workspaces" value={workspaces.length} icon={FolderKanban} tone="indigo" detail={workspaces.length ? 'Across your study groups' : 'Create your first workspace'} /><Stat label="Open tasks" value={openTasks.length} icon={CheckCircle2} tone="blue" detail={`${completed} completed in total`} /><Stat label="Upcoming deadlines" value={upcomingTasks.length} icon={CalendarDays} tone="amber" detail={upcomingTasks[0] ? formatDate(upcomingTasks[0].deadline) : 'No deadlines yet'} /></section>{workspaces.length === 0 ? <EmptyDashboard onCreate={() => navigate('/workspaces')} /> : <section className="dashboard-lower"><article className="surface-card setup-card"><div className="card-heading"><div><span className="eyebrow">YOUR WORKSPACES</span><h2>Keep your groups moving</h2></div><span className="progress-badge">{progress}% task progress</span></div><div className="workspace-list">{workspaces.slice(0, 4).map((workspace) => <button className="workspace-row" key={workspace._id} onClick={() => navigate(`/workspaces/${workspace._id}`)}><span className="workspace-initial">{workspace.name.slice(0, 1).toUpperCase()}</span><span><strong>{workspace.name}</strong><small>{workspace.type} · {workspace.role}</small></span><ArrowUpRight size={16} /></button>)}</div></article><article className="surface-card deadline-card"><div className="card-heading"><div><span className="eyebrow">UP NEXT</span><h2>Deadlines</h2></div><CalendarDays size={20} /></div>{upcomingTasks.length ? upcomingTasks.map((task) => <div className="deadline-row" key={task._id}><span className="deadline-dot" /><span><strong>{task.title}</strong><small>{task.workspace.name} · {formatDate(task.deadline)}</small></span></div>) : <div className="empty-card-content"><CalendarDays size={22} /><p>Your schedule is clear.</p></div>}</article></section>}</div>
+  return (
+    <div className="dashboard-page dashboard-home">
+      <section className="dashboard-hero">
+        <div className="dashboard-hero-copy">
+          <span className="dashboard-date"><CalendarDays size={14} /> {today}</span>
+          <h1>{greeting}, {user?.name?.split(' ')[0] || 'student'} <span>✦</span></h1>
+          <p>Everything you need to keep your study plans moving, all in one place.</p>
+          <button className="dashboard-hero-button" onClick={() => navigate('/workspaces')}><Plus size={17} /> Explore workspaces <ArrowRight size={16} /></button>
+        </div>
+        <div className="dashboard-hero-aside">
+          <span>YOUR PROGRESS</span>
+          <div className="dashboard-progress-ring" style={{ '--progress': `${progress}%` }}><strong>{progress}%</strong><small>completed</small></div>
+          <p>{completed} of {activeTaskCount} tasks completed</p>
+        </div>
+      </section>
+
+      <section className="dashboard-metrics" aria-label="Your study overview">
+        <Stat label="Workspaces" value={workspaces.length} icon={FolderKanban} tone="indigo" detail="Your study spaces" />
+        <Stat label="Open tasks" value={openTasks.length} icon={ClipboardList} tone="blue" detail={overdueTasks.length ? `${overdueTasks.length} overdue` : 'Ready to make progress'} />
+        <Stat label="Upcoming deadlines" value={upcomingTasks.length} icon={CalendarDays} tone="amber" detail={upcomingTasks[0] ? `Next: ${formatDate(upcomingTasks[0].deadline)}` : 'No deadlines yet'} />
+        <Stat label="Completed" value={completed} icon={CheckCircle2} tone="green" detail="Tasks finished so far" />
+      </section>
+
+      <div className="dashboard-content-grid">
+        <section className="dashboard-panel dashboard-workspaces">
+          <header className="dashboard-panel-header"><div><span className="dashboard-kicker">YOUR SPACE</span><h2>Pick up where you left off</h2><p>Your groups and projects, together.</p></div><button onClick={() => navigate('/workspaces')}>View all <ArrowRight size={15} /></button></header>
+          {workspaces.length ? <div className="dashboard-workspace-list">{workspaces.slice(0, 4).map((workspace, index) => <button className="dashboard-workspace-item" key={workspace._id} onClick={() => navigate(`/workspaces/${workspace._id}`)}><span className={`dashboard-workspace-avatar color-${index % 4}`}>{workspace.avatar ? <img src={workspace.avatar} alt="" /> : workspace.name?.charAt(0).toUpperCase() || 'W'}</span><span className="dashboard-workspace-info"><strong>{workspace.name}</strong><small>{(workspace.type || 'Workspace').replaceAll('_', ' ')} · {workspace.role || 'MEMBER'}</small></span><ArrowUpRight size={17} /></button>)}</div> : <div className="dashboard-empty"><FolderKanban size={24} /><strong>Your first workspace starts here</strong><p>Create a space to bring your group together.</p><button onClick={() => navigate('/workspaces')}>Explore workspaces <ArrowRight size={14} /></button></div>}
+        </section>
+        <section className="dashboard-panel dashboard-deadlines">
+          <header className="dashboard-panel-header"><div><span className="dashboard-kicker">PLAN AHEAD</span><h2>Coming up</h2><p>Your next deadlines at a glance.</p></div><span className="dashboard-header-icon"><CalendarDays size={18} /></span></header>
+          {upcomingTasks.length ? <div className="dashboard-deadline-list">{upcomingTasks.slice(0, 4).map((task) => <button className="dashboard-deadline-item" key={`${task.workspace._id}-${task._id}`} onClick={() => navigate(`/workspaces/${task.workspace._id}/tasks`)}><span className="dashboard-deadline-dot" /><span><strong>{task.title}</strong><small>{task.workspace.name}</small></span><time>{formatDate(task.deadline)}</time><ArrowUpRight size={15} /></button>)}</div> : <div className="dashboard-empty"><CalendarDays size={24} /><strong>No upcoming deadlines</strong><p>Tasks with a deadline will appear here.</p></div>}
+          {overdueTasks.length > 0 && <button className="dashboard-overdue" onClick={() => navigate('/tasks')}>{overdueTasks.length} overdue {overdueTasks.length === 1 ? 'task' : 'tasks'} need attention <ArrowRight size={15} /></button>}
+        </section>
+      </div>
+      <section className="dashboard-shortcuts"><div><span className="dashboard-kicker">QUICK ACCESS</span><h2>Where to next?</h2></div><div className="dashboard-shortcut-links"><button onClick={() => navigate('/tasks')}><ClipboardList size={18} /><span><strong>Tasks</strong><small>See your work</small></span><ArrowUpRight size={16} /></button><button onClick={() => navigate('/calendar')}><CalendarDays size={18} /><span><strong>Calendar</strong><small>Plan your time</small></span><ArrowUpRight size={16} /></button><button onClick={() => navigate('/ai')}><Sparkles size={18} /><span><strong>AI assistant</strong><small>Get study support</small></span><ArrowUpRight size={16} /></button></div></section>
+    </div>
+  )
 }
 
-function Stat({ label, value, icon: Icon, tone, detail }) { return <article className="stat-card"><div className={`stat-icon ${tone}`}><Icon size={18} /></div><span>{label}</span><strong>{value}</strong><small>{detail}</small></article> }
-function EmptyDashboard({ onCreate }) { return <section className="dashboard-lower"><article className="surface-card setup-card"><div className="card-heading"><div><span className="eyebrow">GET STARTED</span><h2>Build your first study workspace</h2></div><Sparkles className="card-spark" size={21} /></div><p>Bring tasks, group conversations, deadlines, and study materials into one focused place.</p><button className="primary-action" onClick={onCreate}><Plus size={16} /> Create workspace</button></article><article className="surface-card empty-card"><CalendarDays size={22} /><h2>Your schedule is clear</h2><p>Upcoming tasks and deadlines will appear here once your workspace is connected.</p></article></section> }
+function Stat({ label, value, icon: Icon, tone, detail }) {
+  return <article className="dashboard-metric"><span className={`dashboard-metric-icon ${tone}`}><Icon size={19} /></span><div><span>{label}</span><strong>{value}</strong><small>{detail}</small></div></article>
+}

@@ -1,6 +1,7 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
 import PollCard from '../components/poll/PollCard.jsx'
+import CreatePollModal from '../components/poll/CreatePollModal.jsx'
 
 describe('Poll Module', () => {
   const samplePoll = {
@@ -16,6 +17,21 @@ describe('Poll Module', () => {
     userVote: null,
     createdBy: 'u1',
   }
+
+  test.each([1, 3, 5])('creates a poll expiring in %i hours', async (hours) => {
+    const submit = vi.fn().mockResolvedValue(undefined)
+    render(<CreatePollModal isOpen onClose={vi.fn()} onSubmit={submit} />)
+    fireEvent.change(screen.getByLabelText(/Poll Question/), { target: { value: 'When to meet?' } })
+    fireEvent.change(screen.getByPlaceholderText('Option 1'), { target: { value: 'Today' } })
+    fireEvent.change(screen.getByPlaceholderText('Option 2'), { target: { value: 'Tomorrow' } })
+    fireEvent.change(screen.getByLabelText('Poll Expiration'), { target: { value: `${hours}h` } })
+    const before = Date.now()
+    fireEvent.click(screen.getByRole('button', { name: 'Create Poll' }))
+    await waitFor(() => expect(submit).toHaveBeenCalledOnce())
+    const expires = new Date(submit.mock.calls[0][0].expiresAt).getTime()
+    expect(expires - before).toBeGreaterThanOrEqual(hours * 3600000)
+    expect(expires - before).toBeLessThan(hours * 3600000 + 5000)
+  })
 
   test('renders PollCard question and option labels with vote counts', () => {
     render(

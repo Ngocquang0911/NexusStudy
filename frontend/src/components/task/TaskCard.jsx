@@ -8,7 +8,7 @@ export default function TaskCard({ task, onEdit, onDelete, onStatusChange, curre
   const [showMenu, setShowMenu] = useState(false)
 
   const isLeader = ['OWNER', 'LEADER'].includes(userRole)
-  const isAssignee = task.assignedTo?.some((user) => (user._id || user) === currentUserId)
+  const isAssignee = !task.assignedTo?.length || task.assignedTo?.some((user) => (user._id || user) === currentUserId)
   const canEdit = isLeader || isAssignee
   const canDelete = isLeader
 
@@ -150,8 +150,8 @@ export default function TaskCard({ task, onEdit, onDelete, onStatusChange, curre
               )
             })
           ) : (
-            <span className="unassigned-badge" title="Unassigned">
-              <User size={12} />
+            <span className="unassigned-badge" title="Everyone in this workspace">
+              <User size={12} /> Everyone in this workspace
             </span>
           )}
         </div>

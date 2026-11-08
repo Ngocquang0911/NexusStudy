@@ -42,7 +42,7 @@ export default function CreateChannelModal({ isOpen, onClose, onSubmit, members 
     <div className="modal-backdrop" onClick={onClose}>
       <div className="workspace-modal channel-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-top">
-          <h2>Create Channel</h2>
+          <h2>Create a discussion channel</h2>
           <button type="button" className="modal-close" onClick={onClose} aria-label="Close modal">
             <X size={18} />
           </button>
@@ -82,10 +82,11 @@ export default function CreateChannelModal({ isOpen, onClose, onSubmit, members 
             <input
               id="channel-name"
               type="text"
-              placeholder="e.g. backend-dev, general, design"
+              placeholder="e.g. project-planning, design, questions"
               {...register('name', {
                 required: 'Channel name is required',
                 maxLength: { value: 80, message: 'Name must be 80 characters or less' },
+                validate: (value) => !value.trim().toLowerCase().startsWith('dm-') || 'Names starting with dm- are reserved',
                 pattern: {
                   value: /^[a-zA-Z0-9_-]+$/,
                   message: 'Channel name can only contain letters, numbers, hyphens, and underscores',

@@ -156,9 +156,9 @@ Direct membership by invite code is disabled. Legacy `POST /api/workspaces/join`
 
 - `DELETE /api/workspaces/:id` (workspace owner only)
 
-Deletion first snapshots every official workspace member, then records `status: DELETED`, `deletedAt`, `deletedBy`, and `purgeAt` five days later. The owner must confirm the exact workspace name in the frontend; the backend independently verifies the active workspace and its owner. Ordinary resource APIs and Socket.IO membership checks deny further access. Pending invitations are cancelled, old workspace notifications are removed, an idempotent offline notification is stored for each snapshotted member, realtime rooms are revoked, and an admin audit entry is recorded. If any secondary cleanup fails after access has been revoked, the API marks `cleanupPending` in its response, logs the failed operation, and the scheduled job retries notification delivery.
+Deletion first snapshots every official workspace member, then records `status: DELETED`, `deletedAt`, `deletedBy`, and `purgeAt`: three days later for administrator deletions and five days later for owner deletions. The administrator who deletes a workspace is also included in the archive access snapshot. The owner must confirm the exact workspace name in the frontend; the backend independently verifies the active workspace and its owner. Ordinary resource APIs and Socket.IO membership checks deny further access. Pending invitations are cancelled, old workspace notifications are removed, an idempotent offline notification is stored for each snapshotted user, realtime rooms are revoked, and an admin audit entry is recorded. If any secondary cleanup fails after access has been revoked, the API marks `cleanupPending` in its response, logs the failed operation, and the scheduled job retries notification delivery.
 
-`GET /api/workspaces/deleted-spaces` lists only archives for users in the deletion-time member snapshot. `GET /api/workspaces/deleted-spaces/:id/documents` lists documents still within their normal retention period; `GET /api/workspaces/deleted-spaces/:id/documents/:documentId/download` rechecks the snapshot, workspace/document relationship, retention window, and archive deadline for each download. External links and task/chat URL attachments are not stored files and are not offered as archive downloads. After `purgeAt`, a scheduled job permanently removes workspace-scoped tasks, messages, channels, polls, evaluations, invitations, notifications, memberships, documents, and workspace records. Stored document files are removed only when no document or attachment in another workspace references them. Accounts, audit history, and files shared with other spaces are preserved. Purge failures are logged and retried on the next scheduler run. Mongoose manages these fields and indexes; no separate schema migration is required.
+`GET /api/workspaces/deleted-spaces` lists only archives for users in the deletion-time access snapshot. `GET /api/workspaces/deleted-spaces/:id/documents` lists documents valid at deletion until the archive deadline; `GET /api/workspaces/deleted-spaces/:id/documents/:documentId/download` rechecks the snapshot, workspace/document relationship, and archive deadline for each download. External links and task/chat URL attachments are not stored files and are not offered as archive downloads. After `purgeAt`, a scheduled job permanently removes workspace-scoped tasks, messages, channels, polls, evaluations, invitations, notifications, memberships, documents, and workspace records. Stored document files are removed only when no document or attachment in another workspace references them. Accounts, audit history, and files shared with other spaces are preserved. Purge failures are logged and retried on the next scheduler run. Mongoose manages these fields and indexes; no separate schema migration is required.
 
 ## Phase 4 task endpoints
 
@@ -190,7 +190,7 @@ Tasks with a deadline receive three automatic reminders. Premium workspace leade
 
 Socket.IO clients authenticate with `{ auth: { token: accessToken } }` and can use `joinWorkspace`, `joinChannel`, `sendMessage`, `typing`, `stopTyping`, and `pinMessage`. The server emits `receiveMessage`, `typing`, `stopTyping`, and `messagePinned`.
 
-Free users can use the default channel in each of up to three workspaces and pin up to four messages per workspace. Premium users can create additional public or private channels, join unlimited workspaces, and pin up to 50 messages per workspace. Private channel membership is checked by both REST and Socket.IO.
+Workspace members can create public or private discussion channels. Free users can join up to three workspaces and pin up to four messages per workspace; Premium users can join unlimited workspaces and pin up to 50 messages per workspace. Private channel membership is checked by both REST and Socket.IO.
 
 ## Phase 6 poll endpoints
 
@@ -226,7 +226,7 @@ Evaluation submissions include `evaluatedUserId`, `criteria`, and an optional `c
 
 ## Plans
 
-New accounts use the Free plan. Administrators assign or remove Premium access through the admin user-management page; billing is not integrated. Free accounts can create or join up to three workspaces, pin four messages per workspace, and retain files for 90 days. Premium accounts can join unlimited workspaces, create channels, pin up to 50 messages per workspace, retain files for 365 days, configure reminder schedules, and access contribution reports.
+New accounts use the Free plan. Administrators assign or remove Premium access through the admin user-management page; billing is not integrated. Free accounts can create or join up to three workspaces, pin four messages per workspace, and retain files for 90 days. Premium accounts can join unlimited workspaces, pin up to 50 messages per workspace, retain files for 365 days, configure reminder schedules, and access contribution reports.
 
 ## System administration
 

@@ -9,9 +9,10 @@ export default function UploadDocumentModal({
   onUploadLink,
   loading = false,
   uploadProgress = 0,
+  initialFile = null,
 }) {
   const [mode, setMode] = useState('FILE') // 'FILE' | 'LINK'
-  const [selectedFile, setSelectedFile] = useState(null)
+  const [selectedFile, setSelectedFile] = useState(initialFile)
   const [linkTitle, setLinkTitle] = useState('')
   const [linkUrl, setLinkUrl] = useState('')
   const [dragOver, setDragOver] = useState(false)

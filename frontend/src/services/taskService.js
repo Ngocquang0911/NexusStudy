@@ -1,5 +1,6 @@
 import api from './api.js'
 
+export const exportTaskReport = (workspaceId) => api.get(`/workspaces/${workspaceId}/tasks/report.csv`, { responseType: 'blob' })
 export const listTasks = (workspaceId) => api.get(`/workspaces/${workspaceId}/tasks`)
 export const getTask = (taskId) => api.get(`/tasks/${taskId}`)
 export const createTask = (payload) => api.post('/tasks', payload)

@@ -1,4 +1,5 @@
-import { ArrowLeft, CheckCircle2, ListTodo, LoaderCircle, Plus, Sparkles } from 'lucide-react'
+import { readWorkspaceHeader } from '../../utils/workspaceHeaderCache.js'
+import { ArrowLeft, BarChart3, Download, CheckCircle2, ListTodo, LoaderCircle, Plus, Sparkles } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import KanbanBoard from '../../components/task/KanbanBoard.jsx'
@@ -7,6 +8,7 @@ import TaskModal from '../../components/task/TaskModal.jsx'
 import useAuth from '../../hooks/useAuth.js'
 import {
   createTask,
+  exportTaskReport,
   deleteTask,
   addTaskFeedback,
   listTasks,
@@ -15,7 +17,7 @@ import {
   updateTaskStatus,
 } from '../../services/taskService.js'
 import { getWorkspace, getWorkspaceMembers, listWorkspaces } from '../../services/workspaceService.js'
-import { getTaskBoardStatus, isTaskDueSoon } from '../../utils/taskStatus.js'
+import { getTaskBoardStatus, isTaskDueSoon, TASK_STATUS_LABELS } from '../../utils/taskStatus.js'
 
 export default function TaskPage() {
   const params = useParams()
@@ -26,7 +28,7 @@ export default function TaskPage() {
 
   const [workspaces, setWorkspaces] = useState([])
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState(workspaceId || '')
-  const [workspace, setWorkspace] = useState(null)
+  const [workspace, setWorkspace] = useState(() => readWorkspaceHeader(workspaceId))
   const [members, setMembers] = useState([])
   const [tasks, setTasks] = useState([])
   const [loading, setLoading] = useState(true)
@@ -38,6 +40,26 @@ export default function TaskPage() {
   const [modalLoading, setModalLoading] = useState(false)
   const [defaultStatus, setDefaultStatus] = useState('TODO')
   const [now, setNow] = useState(() => new Date())
+  const [reportOpen, setReportOpen] = useState(false)
+  const [reportError, setReportError] = useState('')
+  const [exporting, setExporting] = useState(false)
+
+  async function downloadReport() {
+    setReportError('')
+    setExporting(true)
+    try {
+      const { data } = await exportTaskReport(activeWsId)
+      const url = URL.createObjectURL(data)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = 'task-report.csv'
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+    } catch (err) { setReportError(err.response?.data?.message || 'Unable to export task report') }
+    finally { setExporting(false) }
+  }
 
   // Filter states
   const [filters, setFilters] = useState({
@@ -139,6 +161,7 @@ export default function TaskPage() {
       const { reminders, ...taskPayload } = formPayload
       let taskId
       if (editingTask) {
+        if (!isLeader) delete taskPayload.assignedTo
         await updateTask(editingTask._id, taskPayload)
         taskId = editingTask._id
       } else {
@@ -227,7 +250,7 @@ export default function TaskPage() {
     if (filters.assignee === 'UNASSIGNED') {
       if (task.assignedTo && task.assignedTo.length > 0) return false
     } else if (filters.assignee !== 'ALL') {
-      const isAssigned = task.assignedTo?.some((u) => (u._id || u) === filters.assignee)
+      const isAssigned = !task.assignedTo?.length || task.assignedTo.some((u) => (u._id || u) === filters.assignee)
       if (!isAssigned) return false
     }
     // Preset filters
@@ -250,17 +273,17 @@ export default function TaskPage() {
   return (
     <div className="task-page-container">
       {/* Workspace Header & Tabs if inside workspace context */}
-      {workspaceId && workspace ? (
+      {workspaceId ? (
         <div className="workspace-detail-header-block">
           <Link className="back-link" to="/workspaces">
             <ArrowLeft size={16} /> All workspaces
           </Link>
           <section className="workspace-hero">
-            <div className="workspace-hero-icon">{workspace.name.slice(0, 1).toUpperCase()}</div>
+            <div className="workspace-hero-icon">{workspace?.avatar ? <img src={workspace.avatar} alt="" /> : workspace?.name?.slice(0, 1).toUpperCase() || '…'}</div>
             <div>
-              <span className="eyebrow">{workspace.type}</span>
-              <h1>{workspace.name}</h1>
-              <p>{workspace.description || 'A focused space for your group to collaborate.'}</p>
+              <span className="eyebrow">{workspace?.type?.replaceAll('_', ' ') || 'WORKSPACE'}</span>
+              <h1>{workspace?.name || 'Loading workspace…'}</h1>
+              <p>{workspace?.description || 'A focused space for your group to collaborate.'}</p>
             </div>
           </section>
 
@@ -330,6 +353,7 @@ export default function TaskPage() {
       )}
 
       {/* Stats Summary Card */}
+      {activeWsId && !loading && !error && <section className="task-report-panel"><div className="task-report-heading"><div><span className="eyebrow">WORKSPACE REPORT</span><h2>Task status report</h2><p>See assignments and completion across this workspace.</p></div><div className="task-report-actions"><button type="button" className="secondary-action" onClick={() => setReportOpen((value) => !value)}><BarChart3 size={16} /> {reportOpen ? 'Hide report' : 'View report'}</button>{userRole === 'OWNER' && <button type="button" className="primary-action" disabled={exporting} onClick={downloadReport}><Download size={16} /> {exporting ? 'Exporting…' : 'Export CSV'}</button>}</div></div>{reportError && <p role="alert">{reportError}</p>}{reportOpen && <div className="task-report-table-wrap"><table className="task-report-table"><thead><tr><th>Task</th><th>Assigned to</th><th>Status</th><th>Progress</th><th>Deadline</th></tr></thead><tbody>{tasks.map((task) => <tr key={task._id}><td>{task.title}</td><td>{task.assignedTo?.length ? task.assignedTo.map((person) => person.name || 'Unknown').join(', ') : 'Everyone in this workspace'}</td><td>{TASK_STATUS_LABELS[getTaskBoardStatus(task, now)]}</td><td>{task.progress || 0}%</td><td>{task.deadline ? new Date(task.deadline).toLocaleString() : '—'}</td></tr>)}</tbody></table>{!tasks.length && <p className="task-report-empty">No tasks have been created in this workspace.</p>}</div>}</section>}
       <div className="task-stats-summary-card">
         <div className="stat-pill">
           <span className="stat-num">{totalTasksCount}</span>
@@ -381,6 +405,8 @@ export default function TaskPage() {
           <p>Please select or create a workspace to start managing tasks.</p>
         </div>
       ) : (
+        <>
+        {totalTasksCount === 0 && <div className="task-getting-started"><div><strong>Ready to get started?</strong><p>Create a task, assign it to a teammate, then move it across the board as work progresses.</p></div><button type="button" className="primary-action" onClick={() => handleOpenCreateModal('TODO')}><Plus size={16} /> Create first task</button></div>}
         <KanbanBoard
           tasks={filteredTasks}
           onEditTask={handleOpenEditModal}
@@ -391,6 +417,7 @@ export default function TaskPage() {
           userRole={userRole}
           now={now}
         />
+        </>
       )}
 
       {/* Create / Edit Modal */}
@@ -414,3 +441,4 @@ export default function TaskPage() {
     </div>
   )
 }
+

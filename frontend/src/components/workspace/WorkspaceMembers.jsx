@@ -1,9 +1,9 @@
-import { Clock, UserPlus, X } from 'lucide-react'
+import { Clock, Flag, UserPlus, X } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { cancelInvitation, inviteMember, removeMember, updateMemberRole } from '../../services/workspaceService.js'
 
-export default function WorkspaceMembers({ workspaceId, members, invitations = [], role, onChanged }) {
+export default function WorkspaceMembers({ workspaceId, members, invitations = [], role, onChanged, currentUserId, onReport }) {
   const canManage = role === 'OWNER' || role === 'LEADER'
   const [message, setMessage] = useState('')
   const [inviteOpen, setInviteOpen] = useState(false)
@@ -57,6 +57,7 @@ export default function WorkspaceMembers({ workspaceId, members, invitations = [
                 <option>LEADER</option><option>MEMBER</option><option>ADVISOR</option>
               </select>
             ) : <span className={`role-tag ${member.role.toLowerCase()}`}>{member.role}</span>}
+            {onReport && member.userId?._id && member.userId._id !== currentUserId && <button type="button" className="workspace-member-report" aria-label={`Report ${member.userId.name || 'member'}`} title="Report member" onClick={() => onReport(member.userId)}><Flag size={15} /></button>}
             {canManage && member.role !== 'OWNER' && <button className="icon-action danger" onClick={() => remove(member.userId._id)} aria-label={`Remove ${member.userId.name}`}><X size={15} /></button>}
           </div>
         ))}

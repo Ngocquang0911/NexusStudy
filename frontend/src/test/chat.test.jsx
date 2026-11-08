@@ -24,6 +24,13 @@ describe('Chat Module', () => {
     expect(screen.getByText('backend-dev')).toBeInTheDocument()
   })
 
+  test('allows a workspace member to open channel creation', () => {
+    const open = vi.fn()
+    render(<ChannelList channels={sampleChannels} onOpenCreateModal={open} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Create channel' }))
+    expect(open).toHaveBeenCalledOnce()
+  })
+
   test('submits MessageInput content when submit button clicked', () => {
     const mockSend = vi.fn()
     render(

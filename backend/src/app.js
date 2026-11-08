@@ -2,6 +2,8 @@ import cors from 'cors'
 import express from 'express'
 import { env } from './config/env.js'
 import { errorHandler, notFoundHandler } from './middleware/error.middleware.js'
+import reportRoutes from './modules/reports/report.routes.js'
+import premiumRoutes from './modules/premium/premium.routes.js'
 import adminRoutes from './modules/admin/admin.routes.js'
 import authRoutes from './modules/auth/auth.routes.js'
 import chatRoutes from './modules/chat/chat.routes.js'
@@ -32,6 +34,8 @@ export function createApp() {
 
   app.use('/api/auth', authRoutes)
   app.use('/api/admin', adminRoutes)
+  app.use('/api', premiumRoutes)
+  app.use('/api', reportRoutes)
   app.use('/api', chatRoutes)
   app.use('/api', documentRoutes)
   app.use('/api', evaluationRoutes)

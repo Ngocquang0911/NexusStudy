@@ -12,11 +12,22 @@ const workspace = { _id: 'workspace-123', name: 'Java Study' }
 function renderDialog(onDeleted = vi.fn()) {
   const onClose = vi.fn()
   render(<WorkspaceSettingsDialog workspace={workspace} onClose={onClose} onDeleted={onDeleted} />)
+  fireEvent.click(screen.getByRole('button', { name: /Delete workspace/i }))
   return { onClose, onDeleted }
 }
 
 beforeEach(() => {
   vi.clearAllMocks()
+})
+
+test('settings menu separates details from deletion', () => {
+  render(<WorkspaceSettingsDialog workspace={workspace} onClose={vi.fn()} onDeleted={vi.fn()} />)
+  expect(screen.queryByLabelText(/Type Java Study to confirm/i)).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: /Workspace details/i }))
+  expect(screen.getByLabelText('Workspace name')).toBeInTheDocument()
+  expect(screen.queryByLabelText(/Type Java Study to confirm/i)).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: /Back to settings/i }))
+  expect(screen.getByRole('button', { name: /Delete workspace/i })).toBeInTheDocument()
 })
 
 describe('workspace deletion confirmation', () => {

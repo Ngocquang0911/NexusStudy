@@ -8,6 +8,9 @@
     <title>NEXUS STUDY</title>
   </head>
   <body>
+    <script>
+      try { document.body.dataset.workspaceTheme = localStorage.getItem('nexus.workspace.theme') === 'dark' ? 'dark' : 'light' } catch (_) { document.body.dataset.workspaceTheme = 'light' }
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

@@ -11,6 +11,7 @@ export default function MessageList({
   onPin,
   onEdit,
   onDelete,
+  onChooseSuggestion,
 }) {
   const scrollRef = useRef(null)
   const [showPinnedBanner, setShowPinnedBanner] = useState(true)
@@ -55,6 +56,7 @@ export default function MessageList({
             <MessageSquare size={36} />
             <h3>No messages yet</h3>
             <p>Be the first to start the conversation in this channel!</p>
+            {onChooseSuggestion && <div className="chat-starter-list"><span>Try starting with</span>{['What should we work on this week?', 'When is everyone available to meet?', 'I have shared some resources for our group.'].map((text) => <button key={text} type="button" onClick={() => onChooseSuggestion(text)}>{text}</button>)}</div>}
           </div>
         ) : (
           sortedMessages.map((msg) => (

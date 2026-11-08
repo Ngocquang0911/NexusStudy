@@ -1,6 +1,5 @@
 import { Check, CheckCircle2, Clock, Lock, MoreVertical, Trash2, User, Vote } from 'lucide-react'
 import { useState } from 'react'
-import { formatDate } from '../../utils/formatDate.js'
 
 export default function PollCard({
   poll,
@@ -47,8 +46,8 @@ export default function PollCard({
           <span className="poll-expiration">
             <Clock size={13} />
             {isOpen
-              ? `Expires ${formatDate(poll.expiresAt)}`
-              : `Ended ${formatDate(poll.expiresAt)}`}
+              ? `Expires ${new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(poll.expiresAt))}`
+              : `Ended ${new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(poll.expiresAt))}`}
           </span>
         </div>
 

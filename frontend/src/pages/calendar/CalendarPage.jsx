@@ -85,6 +85,8 @@ export default function CalendarPage() {
     return new Date(t.deadline).toISOString().split('T')[0] === selectedDateStr
   })
 
+  const upcoming = allTasks.filter((task) => task.deadline && new Date(task.deadline) >= new Date() && !['DONE', 'CANCELLED'].includes(task.status)).sort((a, b) => new Date(a.deadline) - new Date(b.deadline)).slice(0, 3)
+
   return (
     <div className="calendar-page-container">
       <div className="page-title-row">
@@ -193,6 +195,7 @@ export default function CalendarPage() {
                 <div className="empty-agenda">
                   <CalendarIcon size={32} />
                   <p>No deadlines scheduled for this date.</p>
+                  {upcoming.length > 0 && <div className="calendar-upcoming"><strong>Coming up next</strong>{upcoming.map((task) => <Link key={task._id} to="/tasks"><span>{task.title}<small>{task.workspaceName}</small></span><time>{formatDate(task.deadline)}</time></Link>)}</div>}
                 </div>
               ) : (
                 selectedDayTasks.map((task) => (

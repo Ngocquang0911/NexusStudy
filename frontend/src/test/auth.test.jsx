@@ -29,6 +29,16 @@ describe('Authentication Module', () => {
     expect(screen.getByRole('button', { name: /Log in/i })).toBeInTheDocument()
   })
 
+  test('allows users to show and hide the login password', () => {
+    render(<AuthContext.Provider value={{ login: vi.fn() }}><MemoryRouter><LoginPage /></MemoryRouter></AuthContext.Provider>)
+    const input = screen.getByPlaceholderText('Your password')
+    expect(input).toHaveAttribute('type', 'password')
+    fireEvent.click(screen.getByRole('button', { name: 'Show password' }))
+    expect(input).toHaveAttribute('type', 'text')
+    fireEvent.click(screen.getByRole('button', { name: 'Hide password' }))
+    expect(input).toHaveAttribute('type', 'password')
+  })
+
   test('calls login context function on form submit with username', async () => {
     const mockLogin = vi.fn().mockResolvedValue({})
     const mockContext = {
@@ -82,7 +92,7 @@ describe('Authentication Module', () => {
     )
 
     expect(screen.getByPlaceholderText(/Your full name/i)).toBeInTheDocument()
-    expect(screen.getByPlaceholderText(/Chọn username/i)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/quang_study/i)).toBeInTheDocument()
     expect(screen.getByPlaceholderText(/you@university\.edu/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Create account/i })).toBeInTheDocument()
   })

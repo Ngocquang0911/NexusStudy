@@ -3,15 +3,17 @@ import { useState } from 'react'
 
 export default function ChannelList({
   channels = [],
+  members = [],
+  currentUserId,
+  onSelectMember,
+  directLoading,
   activeChannelId,
   onSelectChannel,
   onOpenCreateModal,
-  isLeader = true,
-  canCreateChannel = false,
 }) {
   const [searchTerm, setSearchTerm] = useState('')
 
-  const filteredChannels = channels.filter((c) =>
+  const filteredChannels = channels.filter((c) => !c.directKey).filter((c) =>
     c.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
@@ -20,15 +22,15 @@ export default function ChannelList({
       <div className="channels-header">
         <div className="channels-title-row">
           <h3>Channels</h3>
-          {isLeader && (
+          {onOpenCreateModal && (
             <button
               type="button"
               className="icon-action"
               onClick={onOpenCreateModal}
-              disabled={!canCreateChannel}
-              title={canCreateChannel ? 'Create Channel' : 'Creating channels requires Premium'}
+              title="Create channel"
+              aria-label="Create channel"
             >
-              {canCreateChannel ? <Plus size={16} /> : <Lock size={15} />}
+              <Plus size={16} />
             </button>
           )}
         </div>
@@ -67,6 +69,10 @@ export default function ChannelList({
             <small>No channels found</small>
           </div>
         )}
+      </div>
+      <div className="chat-member-section"><div className="chat-member-heading"><h3>Direct messages</h3><span>{members.length}</span></div>
+        {members.map((member) => { const person = member.userId; if (!person?._id) return null; const isSelf = person._id === currentUserId; const active = channels.some((channel) => channel._id === activeChannelId && channel.directKey?.split(':').includes(person._id) && !isSelf); return <button type="button" key={person._id} className={`chat-member-item ${active ? 'active' : ''}`} disabled={isSelf || directLoading} onClick={() => onSelectMember(person)}><span className="chat-member-avatar">{person.avatar ? <img src={person.avatar} alt="" /> : (person.name || '?').charAt(0).toUpperCase()}</span><span><strong>{person.name || 'Member'}{isSelf ? ' (you)' : ''}</strong><small>{member.role?.toLowerCase()}</small></span></button> })}
+        {!members.length && <p className="chat-members-empty">No members available.</p>}
       </div>
     </div>
   )

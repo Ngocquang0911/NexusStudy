@@ -1,5 +1,6 @@
 import { Archive, Download, FileText, LoaderCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { downloadDeletedWorkspaceDocument, listDeletedWorkspaceDocuments, listDeletedWorkspaces } from '../../services/workspaceService.js'
 import { formatDate, formatFileSize } from '../../utils/formatDate.js'
 
@@ -94,7 +95,7 @@ export default function DeletedSpacesPage() {
         <div>
           <span className="eyebrow">TEMPORARY DATA ACCESS</span>
           <h1>Deleted Spaces</h1>
-          <p>Spaces you belonged to when their owner deleted them. Access ends when the retention period expires.</p>
+          <p>Spaces you belonged to, and spaces you deleted as an administrator. Access ends when the retention period expires.</p>
         </div>
       </section>
       {error && <div className="inline-error" role="alert">{error}</div>}
@@ -106,16 +107,14 @@ export default function DeletedSpacesPage() {
         <div className="surface-card deleted-spaces-empty">
           <Archive size={28} />
           <h2>No deleted Spaces available</h2>
-          <p>Spaces you belonged to at the time of deletion will appear here for up to five days.</p>
+          <p>Eligible deleted spaces appear here until their archive deadline. Spaces deleted by an administrator are available for 3 days.</p><Link className="secondary-action archive-back-link" to="/workspaces">Back to workspaces</Link>
         </div>
       ) : (
         <div className="deleted-space-list">
           {visibleSpaces.map((space) => {
             const isExpanded = expandedSpace === space._id
             const archive = documentsBySpace[space._id]
-            const visibleDocuments = archive?.documents?.filter(
-              (document) => !document.expiresAt || new Date(document.expiresAt).getTime() > now,
-            ) || []
+            const visibleDocuments = archive?.documents || []
             return (
               <section className="surface-card deleted-space-card" key={space._id}>
                 <div className="deleted-space-heading">
@@ -137,7 +136,7 @@ export default function DeletedSpacesPage() {
                     ) : documentErrors[space._id] ? (
                       <div className="inline-error" role="alert">{documentErrors[space._id]}</div>
                     ) : !visibleDocuments.length ? (
-                      <p className="muted-copy">No unexpired documents are available in this Space archive.</p>
+                      <p className="muted-copy">No documents are available in this Space archive.</p>
                     ) : (
                       <div className="archived-document-list">
                         {visibleDocuments.map((document) => (
@@ -149,7 +148,7 @@ export default function DeletedSpacesPage() {
                               <details>
                                 <summary>Document information</summary>
                                 <p>Type: {document.fileType || 'Unknown'} · Uploaded by {document.uploadedBy?.name || document.uploadedBy?.email || 'Workspace member'}</p>
-                                <p>Original file retention ends {formatDateTime(document.expiresAt || space.purgeAt)}. Space archive access ends {formatDateTime(space.purgeAt)}.</p>
+                                <p>Space archive access ends {formatDateTime(space.purgeAt)}.</p>
                               </details>
                             </div>
                             {document.downloadAvailable ? (

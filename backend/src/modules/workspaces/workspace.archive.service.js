@@ -71,7 +71,7 @@ export async function listDeletedWorkspaceDocuments(workspaceId, userId, now = n
   const workspace = await getAuthorizedDeletedWorkspace(workspaceId, userId, now)
   const documents = await Document.find({
     workspaceId,
-    $or: [{ expiresAt: { $gt: now } }, { expiresAt: null }],
+    $or: [{ expiresAt: { $gt: workspace.deletedAt } }, { expiresAt: null }],
   })
     .populate('uploadedBy', 'name email avatar')
     .sort({ createdAt: -1 })
@@ -91,11 +91,11 @@ export async function listDeletedWorkspaceDocuments(workspaceId, userId, now = n
 }
 
 export async function getDeletedWorkspaceDocument(workspaceId, documentId, userId, now = new Date()) {
-  await getAuthorizedDeletedWorkspace(workspaceId, userId, now)
+  const workspace = await getAuthorizedDeletedWorkspace(workspaceId, userId, now)
   const document = await Document.findOne({
     _id: documentId,
     workspaceId,
-    $or: [{ expiresAt: { $gt: now } }, { expiresAt: null }],
+    $or: [{ expiresAt: { $gt: workspace.deletedAt } }, { expiresAt: null }],
   })
   if (!document) throw notFound()
   if (document.isLink) {
@@ -109,7 +109,7 @@ export async function getDeletedWorkspaceDocument(workspaceId, documentId, userI
 export async function notifyDeletedWorkspaceMembers(workspace, now = new Date()) {
   const purgeAt = workspace.purgeAt || new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000)
   const reminderKey = `workspace-deleted:${workspace._id}`
-  const message = `Space ${workspace.name} was deleted by its owner. You can access the Deleted Spaces area to view and download permitted documents until ${purgeAt.toISOString()}. Data will be permanently deleted after that time.`
+  const message = `Space ${workspace.name} was deleted. You can access the Deleted Spaces area to view and download permitted documents until ${purgeAt.toISOString()}. Data will be permanently deleted after that time.`
 
   for (const userId of workspace.deletedMemberIds || []) {
     try {
@@ -184,7 +184,7 @@ async function fileIsUsedOutsideWorkspace(fileUrl, workspaceId) {
   return Boolean(document || task || message)
 }
 
-async function purgeWorkspaceData(workspaceId) {
+export async function purgeWorkspaceData(workspaceId) {
   const documents = await Document.find({ workspaceId }).select('fileUrl isLink').lean()
 
   await Message.deleteMany({ workspaceId })

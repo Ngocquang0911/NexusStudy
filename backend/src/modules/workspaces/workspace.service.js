@@ -88,22 +88,30 @@ export async function updateWorkspace(workspaceId, payload) {
   return workspace
 }
 
-export async function deleteWorkspace(workspaceId, ownerId, now = new Date()) {
+export async function setWorkspaceAvatar(workspaceId, avatar) {
+  const workspace = await Workspace.findOneAndUpdate({ _id: workspaceId, ...ACTIVE_WORKSPACE_QUERY }, { avatar }, { new: true, runValidators: true })
+  if (!workspace) throw notFound('Workspace not found')
+  return workspace
+}
+
+export async function deleteWorkspace(workspaceId, ownerId, now = new Date(), { actorId = ownerId, adminReason = '' } = {}) {
   const memberSnapshot = await WorkspaceMember.find({ workspaceId }).select('userId')
   const deletedMemberIds = [...new Map(memberSnapshot.map(({ userId }) => [String(userId), userId])).values()]
   if (!deletedMemberIds.some((userId) => String(userId) === String(ownerId))) {
-    const error = new Error('Workspace owner membership is missing')
-    error.statusCode = 409
-    throw error
+    // The atomic update below independently verifies ownerId against the workspace.
+    // Preserve archive access for owners of older spaces with missing memberships.
+    deletedMemberIds.push(ownerId)
   }
-  const purgeAt = new Date(now.getTime() + DELETED_SPACE_RETENTION_MS)
+  const adminDeletion = String(actorId) !== String(ownerId)
+  if (adminDeletion && !deletedMemberIds.some((userId) => String(userId) === String(actorId))) deletedMemberIds.push(actorId)
+  const purgeAt = new Date(now.getTime() + (adminDeletion ? 3 * 24 * 60 * 60 * 1000 : DELETED_SPACE_RETENTION_MS))
   const workspace = await Workspace.findOneAndUpdate(
     { _id: workspaceId, ownerId, ...ACTIVE_WORKSPACE_QUERY },
     {
       $set: {
         status: 'DELETED',
         deletedAt: now,
-        deletedBy: ownerId,
+        deletedBy: actorId,
         purgeAt,
         deletedMemberIds,
       },
@@ -121,14 +129,14 @@ export async function deleteWorkspace(workspaceId, ownerId, now = new Date()) {
   const cleanupWarnings = []
   const cleanupOperations = [
     ['audit log', () => AdminAuditLog.create({
-      actorId: ownerId,
+      actorId,
       action: 'WORKSPACE_DELETED',
       targetType: 'WORKSPACE',
       targetId: workspace._id,
       targetLabel: workspace.name,
       previousValue: 'ACTIVE',
       newValue: 'DELETED',
-      reason: 'Workspace owner requested deletion',
+      reason: adminReason || 'Workspace owner requested deletion',
     })],
     ['pending invitations', () => WorkspaceInvitation.updateMany(
       { workspaceId, status: 'PENDING' },

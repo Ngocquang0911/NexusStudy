@@ -105,7 +105,7 @@ export default function CurrentWorkspace() {
             </button>
           ))}
           {!loading && workspaces.length === 0 && <p className="workspace-switcher-empty">Create or join a workspace to get started.</p>}
-          {currentWorkspace && ['OWNER', 'LEADER'].includes(currentWorkspace.role) && !editing && (
+          {currentWorkspace && currentWorkspace.role === 'OWNER' && !editing && (
             <button type="button" className="workspace-switcher-rename" onClick={() => { setName(currentWorkspace.name); setEditing(true); setError('') }}>
               <Pencil size={14} /> Rename workspace
             </button>

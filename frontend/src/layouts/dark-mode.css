@@ -1,0 +1,64 @@
+/* Dark mode is scoped to the signed-in workspace, including its dialogs. */
+body[data-workspace-theme="dark"] { --ink: #f0edf8; --muted: #aaa2bd; --line: #40384e; --paper: #242031; --indigo: #b6a4ff; --indigo-soft: #3b315a; --blue: #87bff1; --amber: #f2bc75; color: #eeeaf6; background: #17141f; color-scheme: dark; }
+body[data-workspace-theme="dark"] :is(.app-shell, .app-main, .page-content) { background: #17141f; color: #eeeaf6; }
+body[data-workspace-theme="dark"] .topbar { background: #211b2cf2; border-color: #554477 #3e354e #3e354e; box-shadow: 0 3px 16px #0003; }
+body[data-workspace-theme="dark"] :is(.brand-title, .breadcrumb-root) { color: #f2edf9; }
+body[data-workspace-theme="dark"] :is(.breadcrumb-current, .filter-chip.active, .workspace-tabs a.active, .channel-item.active, .admin-tabs button.active) { background: #40315e; color: #d6c7ff; border-color: #705a9d; }
+body[data-workspace-theme="dark"] :is(.surface-card, .stat-card, .workspace-card, .dashboard-panel, .dashboard-metric, .dashboard-shortcuts, .task-report-panel, .admin-panel, .admin-stat, .admin-metric-group, .workspace-settings-dialog, .workspace-modal, .task-stats-summary-card, .task-filters-container, .ai-tool-card, .account-menu, .notification-popover-menu, .quick-create-dropdown, .doc-selector-popover, .poll-menu-dropdown, .chat-layout-card) { background: #262132; border-color: #40384e; color: #eeeaf6; box-shadow: 0 8px 24px #0002; }
+body[data-workspace-theme="dark"] :is(.workspace-detail .workspace-hero, .workspace-detail-header-block .workspace-hero, .page-title-row) { background: linear-gradient(115deg, #282234, #342b49); border-color: #493d5c; }
+body[data-workspace-theme="dark"] :is(.workspace-detail .workspace-tabs, .workspace-detail-header-block .workspace-tabs, .admin-tabs) { background: #262132; border-color: #40384e; }
+body[data-workspace-theme="dark"] :is(.workspace-card, .dashboard-workspace-item, .dashboard-deadline-item, .dashboard-shortcut-links button, .workspace-metrics > div, .criterion-rating-card, .agenda-task-item, .calendar-date-cell:not(.empty), .poll-option-item, .document-dropzone, .task-getting-started, .overview-empty-tasks, .workspace-create-tile) { background: #2c2639; border-color: #494053; color: #d8d0e5; }
+body[data-workspace-theme="dark"] :is(.dashboard-workspace-item:hover, .dashboard-deadline-item:hover, .dashboard-shortcut-links button:hover, .workspace-links > button:hover, .account-menu > a:hover, .account-menu > button:hover, .chat-member-item:hover, .channel-item:hover) { background: #3a304d; }
+body[data-workspace-theme="dark"] :is(.workspace-card strong, .dashboard-panel h2, .dashboard-shortcuts h2, .dashboard-workspace-info strong, .dashboard-deadline-item strong, .dashboard-shortcut-links strong, .task-report-heading h2, .task-report-table td, .workspace-hero h1, .page-title-row h1, .workspace-links button strong, .admin-heading h1, .admin-panel h2, .admin-table td, .chat-member-item strong, .criterion-info strong, .account-menu strong, .workspace-settings-dialog h2, .workspace-settings-dialog h3, .workspace-settings-dialog strong, .section-heading h2) { color: #f2eef9; }
+body[data-workspace-theme="dark"] :is(.workspace-hero p, .page-title-row p, .dashboard-panel-header p, .workspace-detail p, .task-report-heading p) { color: #b4abc2; }
+body[data-workspace-theme="dark"] :is(.task-report-table th, .admin-table th, .calendar-days-header-row, .chat-channels-sidebar, .kanban-column, .ai-chat-messages-scroll, .message-scroll-area, .channel-top-bar, .ai-chat-header, .ai-chat-input-bar, .message-input-container, .workspace-general-settings, .workspace-settings-menu > button) { background: #211d2c; color: #dcd5e8; border-color: #40384e; }
+body[data-workspace-theme="dark"] :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea, select, .search-input-wrapper, .workspace-picker-select, .message-form-bar, .ai-text-input) { color: #f2edf8; background: #1d1927; border-color: #51465e; }
+body[data-workspace-theme="dark"] :is(input, textarea)::placeholder { color: #aaa0b7; }
+body[data-workspace-theme="dark"] :is(.secondary-action, .icon-action, .workspace-settings-trigger, .admin-refresh, .admin-pagination button, .filter-chip, .context-docs-btn, .doc-chip, .workspace-settings-menu > button) { background: #30293c; color: #e2d9ef; border-color: #50445f; }
+body[data-workspace-theme="dark"] :is(.modal-actions, .task-modal .modal-actions) { background: #262132; border-color: #40384e; }
+body[data-workspace-theme="dark"] :is(.dashboard-metric small, .dashboard-metric div > span, .workspace-metrics small, .stat-label, .account-menu small, .chat-member-item small) { color: #b6acc5; }
+body[data-workspace-theme="dark"] :is(.dashboard-metric strong, .workspace-metrics strong, .stat-num, .admin-stat strong) { color: #f3effa; }
+body[data-workspace-theme="dark"] :is(.calendar-date-cell.selected, .calendar-date-cell.today, .chat-member-item.active, .poll-option-item.selected-for-vote) { background: #44365d; border-color: #947ed0; }
+body[data-workspace-theme="dark"] .calendar-date-cell.empty { background: transparent; }
+body[data-workspace-theme="dark"] :is(.workspace-settings-section-title p, .workspace-avatar-settings p, .workspace-settings-menu small, .workspace-details-form label) { color: #bdb3c9; }
+body[data-workspace-theme="dark"] .workspace-settings-menu strong { color: #f2edf9; }
+body[data-workspace-theme="dark"] :is(.dashboard-hero, .auth-showcase) { color: #fff; }
+body[data-workspace-theme="dark"] :is(.primary-action, .danger-delete-button) { color: #fff; }
+
+/* Account menu contrast and avatar controls in dark mode. */
+body[data-workspace-theme="dark"] .topbar-avatar-button { display: inline-flex; align-items: center; flex-direction: row; width: auto; height: 42px; padding: 4px 9px 4px 4px; border-color: #514660; border-radius: 999px; background: #30293c; }
+body[data-workspace-theme="dark"] .topbar-avatar-button:hover { background: #3b304b; border-color: #9a80d4; }
+body[data-workspace-theme="dark"] .topbar-avatar-button span.topbar-avatar { color: #fff; background: #bd725d; font-size: 11px; font-weight: 700; }
+body[data-workspace-theme="dark"] .topbar-avatar-button .topbar-avatar { box-shadow: 0 0 0 2px #30293c; object-fit: cover; }
+body[data-workspace-theme="dark"] .avatar-status-badge { border-color: #30293c; }
+body[data-workspace-theme="dark"] .topbar-avatar-button .user-chevron { color: #c9bdd7; }
+body[data-workspace-theme="dark"] .account-menu > a, body[data-workspace-theme="dark"] .account-menu > button { color: #e3dceb; background: transparent; }
+body[data-workspace-theme="dark"] .account-menu > a:hover, body[data-workspace-theme="dark"] .account-menu > button:hover { background: #3a304d; color: #fff; }
+body[data-workspace-theme="dark"] .account-menu > .logout-button { color: #ff8c8c; }
+body[data-workspace-theme="dark"] .account-menu-divider { background: #493f54; }
+body[data-workspace-theme="dark"] .breadcrumb-root .brand-image { filter: brightness(0) invert(1); }
+body[data-workspace-theme="dark"] .archive-format-notice { background: #30273e; border-color: #5b4a70; color: #d9cee6; }
+body[data-workspace-theme="dark"] .deleted-spaces-empty > svg { background: #423357; color: #cdb6ff; }
+@media (max-width: 580px) { body[data-workspace-theme="dark"] .topbar-avatar-button { width: 40px; height: 40px; padding: 3px; justify-content: center; } }
+
+/* Consistent account control in both themes. */
+.topbar-account .topbar-avatar-button { display: inline-flex; align-items: center; justify-content: center; flex-direction: row; gap: 9px; width: auto; height: 42px; padding: 4px 10px 4px 4px; border: 1px solid #e4e0ec; border-radius: 999px; background: #f7f5fa; }
+.topbar-account .avatar-wrapper { flex: 0 0 32px; width: 32px; height: 32px; }
+.topbar-account .topbar-avatar-button .topbar-avatar { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+.topbar-account .topbar-avatar-button span.topbar-avatar { background: #c9785e; color: #fff; font-size: 11px; font-weight: 700; }
+.topbar-account .user-chevron { display: block; flex: 0 0 auto; color: #7d738d; }
+body[data-workspace-theme="dark"] .topbar-account .topbar-avatar-button { background: #30293c; border-color: #514660; }
+body[data-workspace-theme="dark"] .topbar-account .user-chevron { color: #c9bdd7; }
+@media (max-width: 580px) { .topbar-account .topbar-avatar-button, body[data-workspace-theme="dark"] .topbar-account .topbar-avatar-button { width: auto; min-width: 0; height: 40px; padding: 3px 8px 3px 3px; }.topbar-account .user-chevron { display: block; } }
+/* The admin account control shares the same appearance as the user control. */
+.topbar-account .topbar-avatar-button span.topbar-avatar.admin-avatar { background: #c9785e !important; color: #fff; }
+.topbar-account .topbar-avatar-button .avatar-status-badge.admin-badge-dot { background: #38a169 !important; }
+.rail-account-wrap { position: relative; }
+.rail-user-avatar { border: 0; background: transparent; padding: 0; }
+.rail-avatar-box img, .rail-account-photo img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+.rail-account-menu { position: fixed; z-index: 65; left: 78px; bottom: 16px; width: min(290px, calc(100vw - 90px)); padding: 8px; border: 1px solid #ded9e7; border-radius: 14px; background: #fff; color: #30263d; box-shadow: 0 16px 45px #1e142a35; }
+.rail-account-identity { display: flex; align-items: center; gap: 10px; padding: 8px 8px 12px; }.rail-account-identity > span:last-child { min-width: 0; }.rail-account-identity strong, .rail-account-identity small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.rail-account-identity strong { font-size: 13px; }.rail-account-identity small { margin-top: 4px; color: #81778c; font-size: 11px; }.rail-account-photo { display: grid; flex: 0 0 38px; place-items: center; width: 38px; height: 38px; overflow: hidden; border-radius: 10px; background: #c9785e; color: #fff; font-size: 11px; font-weight: 700; }
+.rail-account-menu > a, .rail-account-menu > button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 40px; padding: 9px; border: 0; border-radius: 8px; background: transparent; color: #4b4155; font-size: 12px; text-align: left; }.rail-account-menu > a:hover, .rail-account-menu > button:hover { background: #f4f0fa; }.rail-account-menu > .rail-account-signout { color: #b34148; }.rail-account-divider { height: 1px; margin: 6px 0; background: #eeeaf2; }
+.rail-notifications .notification-popover-menu { position: fixed; left: 378px; right: auto; top: auto; bottom: 16px; max-height: min(500px, calc(100dvh - 32px)); }
+body[data-workspace-theme="dark"] .rail-account-menu { background: #282132; border-color: #51445e; color: #f2edf8; }.rail-account-menu .rail-account-photo { color: #fff; } body[data-workspace-theme="dark"] .rail-account-menu > a, body[data-workspace-theme="dark"] .rail-account-menu > button { color: #e5ddec; } body[data-workspace-theme="dark"] .rail-account-menu > a:hover, body[data-workspace-theme="dark"] .rail-account-menu > button:hover { background: #3a304b; } body[data-workspace-theme="dark"] .rail-account-menu > .rail-account-signout { color: #ff9999; } body[data-workspace-theme="dark"] .rail-account-divider { background: #4b4056; }
+@media (max-width: 800px) { .rail-account-menu { left: 12px; bottom: calc(62px + env(safe-area-inset-bottom)); width: min(290px, calc(100vw - 24px)); }.rail-notifications .notification-popover-menu { left: 12px; right: auto; bottom: calc(62px + env(safe-area-inset-bottom)); top: auto; width: min(340px, calc(100vw - 24px)); } }

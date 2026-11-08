@@ -359,3 +359,40 @@ test('administrators are prohibited from creating personal workspaces', async (c
     },
   )
 })
+
+test('admin deletion retains the archive for three days for members and the administrator', async (context) => {
+  const now = new Date('2026-10-28T00:00:00.000Z')
+  const purgeAt = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
+  mockMembershipSnapshot(context)
+  let update, audit
+  context.mock.method(Workspace, 'findOneAndUpdate', async (_filter, payload) => { update = payload; return { _id: 'workspace-a', name: 'Space', purgeAt, deletedMemberIds: ['owner-a', 'member-a'] } })
+  context.mock.method(Workspace, 'updateOne', async () => {})
+  context.mock.method(AdminAuditLog, 'create', async (entry) => { audit = entry })
+  context.mock.method(WorkspaceInvitation, 'updateMany', async () => {})
+  context.mock.method(Notification, 'deleteMany', async () => {})
+  context.mock.method(Notification, 'findOneAndUpdate', async () => {})
+  await deleteWorkspace('workspace-a', 'owner-a', now, { actorId: 'admin-a', adminReason: 'Abusive content' })
+  assert.equal(update.$set.deletedBy, 'admin-a')
+  assert.deepEqual(update.$set.deletedMemberIds, ['owner-a', 'member-a', 'admin-a'])
+  assert.equal(audit.actorId, 'admin-a')
+  assert.equal(audit.reason, 'Abusive content')
+  assert.equal(update.$set.purgeAt.getTime(), purgeAt.getTime())
+})
+
+test('admin can delete a legacy workspace whose owner membership is missing', async (context) => {
+  context.mock.method(WorkspaceMember, 'find', () => ({ select: async () => [{ userId: 'member-a' }] }))
+  let filter, update
+  context.mock.method(Workspace, 'findOneAndUpdate', async (query, payload) => {
+    filter = query
+    update = payload
+    return { _id: 'workspace-a', name: 'Legacy', purgeAt: payload.$set.purgeAt, deletedMemberIds: payload.$set.deletedMemberIds }
+  })
+  context.mock.method(Workspace, 'updateOne', async () => {})
+  context.mock.method(AdminAuditLog, 'create', async () => {})
+  context.mock.method(WorkspaceInvitation, 'updateMany', async () => {})
+  context.mock.method(Notification, 'deleteMany', async () => {})
+  context.mock.method(Notification, 'findOneAndUpdate', async () => {})
+  await deleteWorkspace('workspace-a', 'owner-a', new Date('2026-11-06T00:00:00Z'), { actorId: 'admin-a', adminReason: 'Report' })
+  assert.equal(filter.ownerId, 'owner-a')
+  assert.deepEqual(update.$set.deletedMemberIds, ['member-a', 'owner-a', 'admin-a'])
+})

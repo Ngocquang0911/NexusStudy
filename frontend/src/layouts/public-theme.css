@@ -1,0 +1,22 @@
+.public-theme-toggle { position: fixed; z-index: 35; left: 18px; bottom: 18px; display: inline-flex; align-items: center; gap: 7px; padding: 10px 13px; border: 1px solid #ded6ee; border-radius: 999px; color: #574282; background: #fffffff2; box-shadow: 0 5px 18px #241a3820; font-size: 12px; font-weight: 700; }
+.public-theme-toggle:focus-visible { outline: 3px solid #9d86ec; outline-offset: 3px; }
+body[data-workspace-theme="dark"] .public-theme-toggle { color: #efe9ff; background: #30283e; border-color: #5a496e; }
+body[data-workspace-theme="dark"] .landing-page { --landing-ink: #f0eaf8; --landing-muted: #b9aec5; --landing-paper: #292233; --landing-border: #463b50; --landing-bg-soft: #231d2c; --landing-purple-soft: #403154; --landing-purple: #c5afff; color: #f0eaf8; background: #18141f; }
+body[data-workspace-theme="dark"] .landing-page :is(.landing-header, .landing-metrics-section, .landing-how, .landing-tour, .landing-features, .landing-faq, .landing-footer) { background: #18141f; border-color: #443a4e; }
+body[data-workspace-theme="dark"] .landing-page :is(.landing-header, .landing-brand, .landing-nav a, .landing-nav button, .landing-login, .landing-section-heading h2, .landing-hero h1) { color: #f1ebf8; }
+body[data-workspace-theme="dark"] .landing-page :is(.landing-preview, .preview-sidebar, .preview-content, .preview-card, .landing-float-card, .floating-badge, .metric-card, .landing-step-card, .tour-display-card, .feature-card, .faq-item, .testimonial-card, .landing-pricing-card, .landing-pomodoro-card) { background: #292232; border-color: #4a3d54; color: #eee8f6; }
+body[data-workspace-theme="dark"] .landing-page :is(.landing-preview strong, .landing-preview h3, .floating-badge strong, .metric-card strong, .metric-number, .landing-step-card h3, .feature-card h3, .faq-item button, .landing-brand) { color: #f2ecf8; }
+body[data-workspace-theme="dark"] .landing-page :is(.preview-topline, .preview-nav-item, .preview-task, .preview-toast, .ribbon-chip, .tour-tab, .landing-pill-announcement) { background-color: #332a40; color: #dfd4ed; border-color: #51425d; }
+body[data-workspace-theme="dark"] .landing-page :is(p, .landing-section-sub, .preview-welcome p, .metric-label) { color: #bbb0c7; }
+body[data-workspace-theme="dark"] .landing-page :is(.landing-button, .landing-pill-tag) { color: #fff; background: #6f52c4; }
+body[data-workspace-theme="dark"] .landing-page :is(.landing-brand-image, .preview-brand-image) { filter: brightness(0) invert(1); }
+body[data-workspace-theme="dark"] :is(.auth-page, .auth-experience-page, .auth-form-side) { color: #f2edf8; background: #1a1622; }
+body[data-workspace-theme="dark"] :is(.auth-card, .auth-experience-page .auth-card) { background: #292233; border-color: #493d55; color: #f2edf8; box-shadow: 0 20px 60px #0003; }
+body[data-workspace-theme="dark"] :is(.auth-card h1, .auth-experience-page .auth-card label) { color: #f3edf9; }
+body[data-workspace-theme="dark"] :is(.auth-card p, .auth-form-footer, .auth-field-hint, .auth-home-link) { color: #bdb1c9; }
+body[data-workspace-theme="dark"] :is(.auth-card input, .auth-experience-page .auth-card input) { color: #f6f1fa; background: #201a29; border-color: #51465e; }
+body[data-workspace-theme="dark"] :is(.auth-card input::placeholder) { color: #a69ab1; }
+body[data-workspace-theme="dark"] :is(.auth-form-mark, .auth-brand-image) { filter: brightness(0) invert(1); }
+body[data-workspace-theme="dark"] .auth-password-field button { color: #c1b5cf; }
+body[data-workspace-theme="dark"] .auth-password-field button:hover { background: #443752; }
+@media (max-width: 600px) { .public-theme-toggle { left: 12px; bottom: max(12px, env(safe-area-inset-bottom)); padding: 10px; }.public-theme-toggle span { display: none; } }

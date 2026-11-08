@@ -4,6 +4,7 @@ import { requireChannelMember, requireMessageMember } from '../../middleware/cha
 import { requireWorkspaceMember } from '../../middleware/workspace.middleware.js'
 import {
   create,
+  direct,
   editMessage,
   getChannels,
   getMessages,
@@ -19,6 +20,7 @@ const router = Router()
 
 router.use(requireAuth)
 router.get('/workspaces/:workspaceId/channels', requireWorkspaceMember, getChannels)
+router.post('/workspaces/:workspaceId/direct/:userId', requireWorkspaceMember, direct)
 router.post('/workspaces/:workspaceId/channels', requireWorkspaceMember, create)
 router.put('/channels/:id', requireChannelMember, update)
 router.delete('/channels/:id', requireChannelMember, remove)

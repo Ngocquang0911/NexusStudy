@@ -1,5 +1,6 @@
 import {
   createChannel,
+  getOrCreateDirectChannel,
   createMessage,
   deleteChannel,
   deleteMessage,
@@ -22,6 +23,10 @@ async function handle(request, response, next, action, message, statusCode = 200
 
 export function getChannels(request, response, next) {
   return handle(request, response, next, () => listChannels(request.params.workspaceId, request.auth.userId), 'Channels retrieved')
+}
+
+export function direct(request, response, next) {
+  return handle(request, response, next, () => getOrCreateDirectChannel(request.params.workspaceId, request.auth.userId, request.params.userId), 'Direct conversation ready')
 }
 
 export function create(request, response, next) {

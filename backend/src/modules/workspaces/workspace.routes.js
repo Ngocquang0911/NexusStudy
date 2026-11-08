@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { workspaceAvatarUpload } from '../../middleware/workspaceAvatar.middleware.js'
 import { requireAuth } from '../../middleware/auth.middleware.js'
 import { requireWorkspaceLeader, requireWorkspaceMember, requireWorkspaceOwner } from '../../middleware/workspace.middleware.js'
 import { downloadDeletedDocument, listDeleted, listDeletedDocuments } from './workspace.archive.controller.js'
@@ -17,6 +18,7 @@ import {
 	remove,
 	removeMemberFromWorkspace,
 	update,
+	updateAvatar,
 	workspaceInvitations,
 } from './workspace.controller.js'
 
@@ -34,7 +36,8 @@ router.post('/invitations/:invitationId/decline', declineInvitation)
 router.post('/join', join)
 router.post('/:id/join', join)
 router.get('/:id', requireWorkspaceMember, getOne)
-router.put('/:id', requireWorkspaceMember, requireWorkspaceLeader, update)
+router.put('/:id/avatar', requireWorkspaceMember, requireWorkspaceOwner, workspaceAvatarUpload, updateAvatar)
+router.put('/:id', requireWorkspaceMember, requireWorkspaceOwner, update)
 router.delete('/:id', requireWorkspaceMember, requireWorkspaceOwner, remove)
 router.post('/:id/invite', requireWorkspaceMember, requireWorkspaceLeader, invite)
 router.get('/:id/invitations', requireWorkspaceMember, workspaceInvitations)

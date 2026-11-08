@@ -1,0 +1,1615 @@
+/* ==========================================================================
+   LIVE POMODORO & ACCOUNTABILITY COMPONENT STYLES
+   Design System: Space Grotesk, DM Sans, #6548c7 primary, #22202b ink
+   Symmetrical, balanced layout with loop & cycle controls
+   ========================================================================== */
+
+.landing-pomodoro-section {
+  position: fixed;
+  z-index: 1000;
+  top: 96px;
+  right: 24px;
+  width: min(780px, calc(100vw - 32px));
+  max-height: calc(100vh - 112px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 30px 0;
+  background: linear-gradient(180deg, rgba(250, 248, 254, 0.7) 0%, rgba(255, 255, 255, 0.95) 100%);
+  border: 1px solid #ece7f3;
+  border-radius: 16px;
+  box-shadow: 0 18px 55px rgba(40, 32, 70, 0.2);
+  transition: opacity 180ms ease;
+}
+
+.landing-pomodoro-section[hidden] {
+  display: none;
+}
+
+.landing-pomodoro-section.is-scrolling {
+  opacity: 0.35;
+}
+
+.landing-pomodoro-section.is-dragging {
+  user-select: none;
+  transition: none;
+}
+
+.pomodoro-panel-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 36px;
+  padding: 0 16px;
+  margin-bottom: 12px;
+}
+
+.pomodoro-panel-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #625d6e;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: grab;
+  touch-action: none;
+}
+
+.is-dragging .pomodoro-panel-drag-handle {
+  cursor: grabbing;
+}
+
+.pomodoro-panel-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pomodoro-panel-tool-btn {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid #ece7f3;
+  border-radius: 50%;
+  color: #625d6e;
+  background: #fff;
+  cursor: pointer;
+  transition: color 0.16s ease, background 0.16s ease;
+}
+
+.pomodoro-panel-tool-btn:hover {
+  color: #6548c7;
+  background: #f5f1ff;
+}
+
+.pomodoro-container {
+  width: min(100% - 32px, 1240px);
+  margin: 0 auto;
+}
+
+.landing-pomodoro-section.is-compact {
+  width: min(340px, calc(100vw - 24px));
+  max-height: min(480px, calc(100dvh - 110px));
+  padding: 8px 0 10px;
+}
+
+.is-compact .pomodoro-panel-toolbar {
+  min-height: 30px;
+  padding: 0 12px;
+  margin-bottom: 2px;
+}
+
+.is-compact .pomodoro-panel-tool-btn {
+  width: 28px;
+  height: 28px;
+}
+
+.is-compact .pomodoro-container {
+  width: calc(100% - 20px);
+}
+
+.is-compact .landing-section-heading,
+.is-compact .pomodoro-completion-toast,
+.is-compact .pomodoro-cycle-bar,
+.is-compact .pomodoro-goal-bar,
+.is-compact .pomodoro-timer-meta {
+  display: none;
+}
+
+.is-compact .pomodoro-bottom-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.is-compact .pomodoro-bottom-grid > .accountability-card-accent {
+  display: none;
+}
+
+.is-compact .pomodoro-card {
+  min-width: 0;
+  padding: 7px 10px;
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.is-compact .card-topline {
+  margin-bottom: 7px;
+}
+
+.is-compact .summary-eyebrow {
+  font-size: 9px;
+}
+
+.is-compact .storage-badge {
+  font-size: 9px;
+}
+
+.is-compact .summary-stats-grid {
+  gap: 6px;
+}
+
+.is-compact .summary-stat-box {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 3px;
+}
+
+.is-compact .stat-number {
+  font-size: 15px;
+}
+
+.is-compact .stat-label {
+  margin-top: 0;
+  font-size: 9px;
+}
+
+.is-compact .current-goal-preview,
+.is-compact .history-footer-disclaimer {
+  display: none;
+}
+
+.is-compact .history-header {
+  margin-bottom: 6px;
+}
+
+.is-compact .history-title-wrap {
+  gap: 6px;
+}
+
+.is-compact .history-title-wrap h4 {
+  font-size: 12px;
+}
+
+.is-compact .history-empty {
+  padding: 3px 0;
+}
+
+.is-compact .history-empty p {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.is-compact .history-list {
+  gap: 4px;
+}
+
+.is-compact .history-item {
+  padding: 3px 0;
+}
+
+.is-compact .history-item-left {
+  gap: 6px;
+}
+
+.is-compact .history-item-left strong,
+.is-compact .history-time {
+  font-size: 10px;
+}
+
+.is-compact .history-goal {
+  display: none;
+}
+
+.is-compact .pomodoro-hero-card {
+  margin: 0;
+  padding: 8px 10px 9px;
+  box-shadow: none;
+}
+
+.is-compact .pomodoro-mode-tabs {
+  padding: 3px;
+  gap: 2px;
+  margin-bottom: 6px;
+}
+
+.is-compact .mode-tab-btn {
+  min-height: 38px;
+  padding: 4px 3px;
+}
+
+.is-compact .mode-tab-label {
+  font-size: 10px;
+}
+
+.is-compact .mode-tab-duration {
+  font-size: 9px;
+}
+
+.is-compact .pomodoro-countdown-wrap {
+  padding: 2px 0 8px;
+}
+
+.is-compact .pomodoro-time-display {
+  font-size: 42px;
+  margin-bottom: 5px;
+}
+
+.is-compact .pomodoro-status-text {
+  min-height: 0;
+  margin-bottom: 8px;
+}
+
+.is-compact .status-badge {
+  padding: 2px 8px;
+  font-size: 10px;
+}
+
+.is-compact .pomodoro-progress-track {
+  height: 6px;
+  margin-bottom: 5px;
+}
+
+.is-compact .pomodoro-progress-stats {
+  display: none;
+}
+
+.is-compact .pomodoro-controls {
+  gap: 6px;
+  padding: 6px 0 8px;
+}
+
+.is-compact .pomodoro-action-btn {
+  gap: 5px;
+  padding: 7px 11px;
+  border-radius: 7px;
+  font-size: 11px;
+}
+
+.is-compact .pomodoro-action-btn.secondary-btn {
+  padding: 7px 9px;
+}
+
+.is-compact .pomodoro-icon-btn {
+  width: 34px;
+  height: 34px;
+}
+
+/* Completion Toast (Compact & Centered) */
+.pomodoro-completion-toast {
+  max-width: 680px;
+  margin: 0 auto 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+  padding: 12px 18px;
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(22, 101, 52, 0.06);
+  animation: slide-down 0.22s ease-out;
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.completion-toast-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toast-spark-icon {
+  color: #16a34a;
+  flex-shrink: 0;
+}
+
+.completion-toast-left strong {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.completion-toast-left p {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: #15803d;
+}
+
+.toast-close-btn {
+  background: transparent;
+  border: none;
+  color: #166534;
+  cursor: pointer;
+  padding: 4px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  opacity: 0.75;
+  transition: opacity 0.15s ease;
+}
+
+.toast-close-btn:hover {
+  opacity: 1;
+}
+
+/* ==========================================================================
+   CENTER STAGE: PRIMARY POMODORO HERO CARD
+   ========================================================================== */
+
+.pomodoro-hero-card {
+  max-width: 680px;
+  margin: 0 auto 36px;
+  background: #ffffff;
+  border: 1px solid #ece7f3;
+  border-radius: 16px;
+  padding: 28px 32px;
+  box-shadow: 0 10px 35px rgba(40, 32, 70, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Mode Switcher Tabs */
+.pomodoro-mode-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  background: #f5f3f9;
+  padding: 5px;
+  border-radius: 10px;
+  gap: 4px;
+  margin-bottom: 18px;
+}
+
+.mode-tab-btn {
+  display: flex;
+  min-width: 0;
+  min-height: 46px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 8px;
+  border: none;
+  background: transparent;
+  color: #726e7d;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  text-align: center;
+}
+
+.mode-tab-label {
+  max-width: 100%;
+  font-size: 12px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.mode-tab-duration {
+  color: #8c8799;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.mode-tab-btn:hover {
+  color: #22202b;
+}
+
+.mode-tab-btn.active.focus {
+  background: #ffffff;
+  color: #6548c7;
+  box-shadow: 0 2px 6px rgba(101, 72, 199, 0.15);
+  font-weight: 700;
+}
+
+.mode-tab-btn.active.short-break,
+.mode-tab-btn.active.long-break {
+  background: #ffffff;
+  color: #2b6cb0;
+  box-shadow: 0 2px 6px rgba(43, 108, 176, 0.15);
+  font-weight: 700;
+}
+
+.mode-tab-btn.active .mode-tab-duration {
+  color: currentColor;
+  opacity: 0.75;
+}
+
+/* Vòng lặp / Cycle & Loop Indicator Bar */
+.pomodoro-cycle-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 14px;
+  background: #faf8fe;
+  border: 1px solid #ede8f5;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 12px;
+}
+
+.cycle-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cycle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #6548c7;
+}
+
+.cycle-icon {
+  color: #6548c7;
+}
+
+.cycle-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cycle-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #e2dcee;
+  transition: all 0.2s ease;
+}
+
+.cycle-dot.completed {
+  background: #6548c7;
+  box-shadow: 0 0 0 2px rgba(101, 72, 199, 0.18);
+}
+
+.cycle-dot.active {
+  background: #e28743;
+  transform: scale(1.2);
+  box-shadow: 0 0 0 2px rgba(226, 135, 67, 0.3);
+  animation: dot-pulse 1.8s infinite;
+}
+
+@keyframes dot-pulse {
+  0%, 100% { transform: scale(1.15); }
+  50% { transform: scale(1.3); }
+}
+
+.cycle-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cycle-summary-tag {
+  color: #8c8799;
+  font-size: 11px;
+}
+
+.cycle-reset-btn {
+  background: none;
+  border: none;
+  color: #8c8799;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.cycle-reset-btn:hover {
+  color: #6548c7;
+}
+
+/* Goal Bar */
+.pomodoro-goal-bar {
+  margin-bottom: 20px;
+  padding: 8px 12px;
+  background: #faf9fd;
+  border: 1px dashed #ded8e8;
+  border-radius: 8px;
+}
+
+.pomodoro-goal-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.goal-icon {
+  color: #6548c7;
+  flex-shrink: 0;
+}
+
+.goal-label {
+  flex: 1;
+  font-size: 13px;
+  color: #22202b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.goal-placeholder {
+  color: #938f9e;
+  font-style: italic;
+}
+
+.goal-edit-btn {
+  background: transparent;
+  border: none;
+  color: #6548c7;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.goal-edit-btn:hover {
+  background: #f1edfc;
+}
+
+.pomodoro-goal-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.pomodoro-goal-input {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 13px;
+  border: 1px solid #c8c2d8;
+  border-radius: 6px;
+  outline: none;
+}
+
+.pomodoro-goal-input:focus {
+  border-color: #6548c7;
+  box-shadow: 0 0 0 2px rgba(101, 72, 199, 0.15);
+}
+
+.goal-action-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+
+.goal-action-btn.primary {
+  background: #6548c7;
+  color: #ffffff;
+}
+
+.goal-action-btn.secondary {
+  background: #eeebf2;
+  color: #4b4856;
+}
+
+/* Countdown Wrap */
+.pomodoro-countdown-wrap {
+  text-align: center;
+  padding: 6px 0 20px;
+}
+
+.pomodoro-time-display {
+  font: 700 76px 'Space Grotesk', sans-serif;
+  letter-spacing: -0.02em;
+  color: #22202b;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.pomodoro-time-display.shortBreak,
+.pomodoro-time-display.longBreak {
+  color: #2b6cb0;
+}
+
+.pomodoro-status-text {
+  min-height: 24px;
+  margin-bottom: 18px;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.status-badge.running {
+  background: #fff5eb;
+  color: #c05621;
+}
+
+.status-badge.paused {
+  background: #edf2f7;
+  color: #4a5568;
+}
+
+.status-badge.idle {
+  background: #f7fafc;
+  color: #718096;
+}
+
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #dd6b20;
+  animation: pomodoro-pulse 1.4s infinite;
+}
+
+@keyframes pomodoro-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.25); opacity: 0.7; }
+}
+
+/* Progress Track */
+.pomodoro-progress-track {
+  width: 100%;
+  height: 8px;
+  background: #f0eef5;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.pomodoro-progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.pomodoro-progress-bar.focus {
+  background: linear-gradient(90deg, #7c5ce9 0%, #6548c7 100%);
+}
+
+.pomodoro-progress-bar.shortBreak,
+.pomodoro-progress-bar.longBreak {
+  background: linear-gradient(90deg, #4299e1 0%, #3182ce 100%);
+}
+
+.pomodoro-progress-stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #8c8898;
+  font-weight: 500;
+}
+
+/* Controls */
+.pomodoro-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px 0 18px;
+  border-bottom: 1px solid #f2eff6;
+}
+
+.pomodoro-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 22px;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  border: 1px solid transparent;
+}
+
+.pomodoro-action-btn.start-btn {
+  background: #6548c7;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(101, 72, 199, 0.25);
+}
+
+.pomodoro-action-btn.start-btn:hover {
+  background: #5439b0;
+  transform: translateY(-1px);
+}
+
+.pomodoro-action-btn.pause-btn {
+  background: #e28743;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(226, 135, 67, 0.25);
+}
+
+.pomodoro-action-btn.pause-btn:hover {
+  background: #cc7432;
+}
+
+.pomodoro-action-btn.resume-btn {
+  background: #38a169;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(56, 161, 105, 0.25);
+}
+
+.pomodoro-action-btn.resume-btn:hover {
+  background: #2f855a;
+}
+
+.pomodoro-action-btn.secondary-btn {
+  background: #f7f6fa;
+  color: #494553;
+  border: 1px solid #dedae7;
+  padding: 11px 16px;
+}
+
+.pomodoro-action-btn.secondary-btn:hover {
+  background: #edeaf4;
+  color: #22202b;
+}
+
+.pomodoro-icon-btn {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 9px;
+  border: 1px solid #dedae7;
+  background: #f7f6fa;
+  color: #6e6b7b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pomodoro-icon-btn:hover {
+  background: #edeaf4;
+  color: #22202b;
+}
+
+/* Quick Settings Meta Footer */
+.pomodoro-timer-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 11.5px;
+  color: #837e90;
+  flex-wrap: wrap;
+}
+
+.meta-icon {
+  vertical-align: -2px;
+  margin-right: 4px;
+}
+
+.meta-link {
+  background: none;
+  border: none;
+  color: #6548c7;
+  font-weight: 600;
+  font-size: 11.5px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.meta-link:hover {
+  color: #5439b0;
+}
+
+/* ==========================================================================
+   BOTTOM ROW: 3 SYMMETRICAL COMPANION CARDS
+   ========================================================================== */
+
+.pomodoro-bottom-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  align-items: stretch;
+}
+
+.pomodoro-card {
+  background: #ffffff;
+  border: 1px solid #ece7f3;
+  border-radius: 14px;
+  padding: 22px;
+  box-shadow: 0 4px 16px rgba(40, 32, 70, 0.04);
+  display: flex;
+  flex-direction: column;
+}
+
+.accountability-card-accent {
+  background: linear-gradient(180deg, #ffffff 0%, #faf8fe 100%);
+  border-color: #e5def5;
+}
+
+/* Card Topline */
+.card-topline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.summary-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  color: #8c8799;
+}
+
+.eyebrow-icon.orange {
+  color: #e28743;
+}
+
+.storage-badge {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #6548c7;
+  background: #f4f0ff;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.summary-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  text-align: center;
+}
+
+.summary-stat-box {
+  background: #faf9fd;
+  border: 1px solid #eeebf4;
+  border-radius: 8px;
+  padding: 10px 4px;
+}
+
+.stat-number {
+  display: block;
+  font: 700 22px 'Space Grotesk', sans-serif;
+  color: #22202b;
+}
+
+.stat-label {
+  display: block;
+  font-size: 10.5px;
+  color: #7b7787;
+  margin-top: 2px;
+}
+
+.current-goal-preview {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #f2edf7;
+  font-size: 12px;
+}
+
+.goal-preview-label {
+  color: #8c8799;
+  font-weight: 600;
+  margin-right: 6px;
+}
+
+.goal-preview-text {
+  display: inline;
+  color: #22202b;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Accountability Card */
+.accountability-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #6548c7;
+  background: #f1edfc;
+  border: 1px solid #e2d9f7;
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+
+.accountability-header h3 {
+  font: 700 16px 'Space Grotesk', sans-serif;
+  color: #22202b;
+  margin: 0 0 6px;
+}
+
+.accountability-header p {
+  font-size: 12.5px;
+  color: #6e6b7b;
+  line-height: 1.4;
+  margin: 0 0 14px;
+}
+
+.accountability-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.pomodoro-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 16px;
+  background: #6548c7;
+  color: #ffffff;
+  border: 1px solid #6548c7;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  text-decoration: none;
+}
+
+.pomodoro-btn-primary:hover {
+  background: #5439b0;
+}
+
+.pomodoro-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 16px;
+  background: #f7f6fa;
+  color: #383442;
+  border: 1px solid #dedae7;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  text-decoration: none;
+}
+
+.pomodoro-btn-secondary:hover {
+  background: #edeaf4;
+  color: #1b1822;
+}
+
+.pomodoro-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: transparent;
+  color: #6e6b7b;
+  border: none;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pomodoro-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: transparent;
+  color: #6548c7;
+  border: 1px solid #d4cbeb;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.accountability-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  font-size: 11px;
+  color: #8c8799;
+  line-height: 1.35;
+  margin-top: auto;
+}
+
+.accountability-note svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* History Card */
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.history-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #22202b;
+}
+
+.history-title-wrap h4 {
+  font: 700 15px 'Space Grotesk', sans-serif;
+  margin: 0;
+}
+
+.clear-history-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: #9f9baa;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.clear-history-btn:hover {
+  color: #e53e3e;
+  background: #fff5f5;
+}
+
+.history-confirm-box {
+  background: #fffaf0;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  font-size: 11.5px;
+  color: #9a3412;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.confirm-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.confirm-yes {
+  padding: 3px 8px;
+  background: #e53e3e;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.confirm-no {
+  padding: 3px 8px;
+  background: #eeebf2;
+  color: #494553;
+  border: none;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.history-empty {
+  padding: 16px 0;
+  text-align: center;
+  font-size: 12px;
+  color: #9692a1;
+  margin: auto 0;
+}
+
+.history-empty p {
+  margin: 0;
+}
+
+.history-list {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 9px;
+  background: #faf9fd;
+  border-radius: 7px;
+  font-size: 12px;
+}
+
+.history-item-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.history-check {
+  color: #38a169;
+  flex-shrink: 0;
+}
+
+.history-item-left strong {
+  display: block;
+  font-weight: 600;
+  color: #22202b;
+  font-size: 11.5px;
+}
+
+.history-goal {
+  display: block;
+  color: #726e7d;
+  font-size: 10.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+}
+
+.history-time {
+  font-size: 10.5px;
+  color: #928e9c;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.history-footer-disclaimer {
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid #f2edf7;
+  font-size: 10.5px;
+  color: #9b97a7;
+  line-height: 1.35;
+}
+
+/* ==========================================================================
+   MODALS (SETTINGS & ACCOUNT REQUIRED)
+   ========================================================================== */
+
+.pomodoro-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(22, 19, 31, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  animation: fade-in 0.15s ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.pomodoro-modal-card {
+  background: #ffffff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 20px 50px rgba(18, 14, 28, 0.25);
+  overflow: hidden;
+  animation: scale-up 0.18s ease-out;
+}
+
+.pomodoro-account-modal {
+  max-width: 520px;
+}
+
+@keyframes scale-up {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.pomodoro-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid #eeebf2;
+}
+
+.pomodoro-modal-header h3 {
+  font: 700 17px 'Space Grotesk', sans-serif;
+  color: #22202b;
+  margin: 0;
+}
+
+.modal-title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-icon-badge {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #f1edfc;
+  color: #6548c7;
+}
+
+.pomodoro-modal-close {
+  background: transparent;
+  border: none;
+  color: #8c8799;
+  cursor: pointer;
+  padding: 4px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+}
+
+.pomodoro-modal-close:hover {
+  color: #22202b;
+  background: #f5f3f9;
+}
+
+/* Settings Form */
+.pomodoro-settings-form {
+  padding: 22px;
+}
+
+.settings-section-heading {
+  margin-bottom: 10px;
+}
+
+.settings-section-heading span {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #8c8799;
+}
+
+.pomodoro-settings-lock-notice {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border: 1px solid #e8defc;
+  border-radius: 8px;
+  color: #5f4b91;
+  background: #f8f5ff;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.pomodoro-settings-lock-notice span {
+  flex: 1 1 220px;
+}
+
+.pomodoro-settings-lock-notice a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #6548c7;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.pomodoro-settings-lock-notice a:hover {
+  text-decoration: underline;
+}
+
+.pomodoro-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.pomodoro-setting-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pomodoro-setting-field span {
+  font-size: 12px;
+  font-weight: 600;
+  color: #494553;
+}
+
+.pomodoro-setting-field input {
+  padding: 7px 10px;
+  border: 1px solid #dcd7e6;
+  border-radius: 7px;
+  font-size: 13.5px;
+  color: #22202b;
+  font-weight: 600;
+  outline: none;
+}
+
+.pomodoro-setting-field input:focus {
+  border-color: #6548c7;
+  box-shadow: 0 0 0 2px rgba(101, 72, 199, 0.15);
+}
+
+.pomodoro-setting-field input:disabled {
+  color: #817c8a;
+  background: #f4f2f7;
+  cursor: not-allowed;
+}
+
+.field-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pomodoro-cycle-config-row {
+  margin-bottom: 16px;
+  background: #faf8fe;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #eee8f8;
+}
+
+.cycle-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 5px;
+}
+
+.cycle-number-input {
+  width: 80px;
+}
+
+.field-hint {
+  font-size: 11px;
+  color: #7b7688;
+}
+
+.pomodoro-toggles-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid #eeebf2;
+  border-bottom: 1px solid #eeebf2;
+  margin-bottom: 16px;
+}
+
+.pomodoro-toggle-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.pomodoro-toggle-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  accent-color: #6548c7;
+  cursor: pointer;
+}
+
+.toggle-text strong {
+  display: block;
+  font-size: 12.5px;
+  color: #22202b;
+}
+
+.toggle-text small {
+  display: block;
+  font-size: 11px;
+  color: #7a7686;
+  margin-top: 2px;
+}
+
+.pomodoro-test-sound-row {
+  margin-bottom: 18px;
+}
+
+.pomodoro-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+}
+
+.pomodoro-footer-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Account Required Modal Body */
+.account-req-body {
+  padding: 22px;
+}
+
+.account-req-explanation {
+  font-size: 13.5px;
+  color: #494553;
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+
+.account-req-explanation p {
+  margin: 0 0 8px;
+}
+
+.feature-comparison-box {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  background: #faf9fd;
+  border: 1px solid #eeeaf6;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 20px;
+}
+
+.col-badge {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+
+.col-badge.guest {
+  background: #eeebf2;
+  color: #555160;
+}
+
+.col-badge.member {
+  background: #f1edfc;
+  color: #6548c7;
+}
+
+.feature-col ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 11px;
+  color: #5a5665;
+}
+
+.account-req-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN (AUTOMATIC 1-COLUMN ON MOBILE)
+   ========================================================================== */
+
+@media (max-width: 900px) {
+  .landing-pomodoro-section {
+    top: 82px;
+    right: 12px;
+    width: calc(100vw - 24px);
+    max-height: calc(100dvh - 94px);
+    padding: 28px 0 24px;
+  }
+
+  .landing-pomodoro-section.is-compact {
+    width: min(340px, calc(100vw - 24px));
+    max-height: min(480px, calc(100dvh - 94px));
+    padding: 8px 0 10px;
+  }
+
+  .pomodoro-hero-card {
+    padding: 20px 16px;
+    margin-bottom: 24px;
+  }
+
+  .pomodoro-bottom-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .pomodoro-time-display {
+    font-size: 56px;
+  }
+
+  .pomodoro-mode-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 3px;
+  }
+
+  .mode-tab-btn {
+    min-height: 44px;
+    padding: 6px 4px;
+  }
+
+  .mode-tab-label {
+    font-size: 11px;
+  }
+
+  .mode-tab-duration {
+    font-size: 9.5px;
+  }
+
+  .pomodoro-cycle-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .cycle-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .pomodoro-controls {
+    gap: 8px;
+  }
+
+  .pomodoro-action-btn {
+    padding: 9px 15px;
+    font-size: 13px;
+  }
+
+  .feature-comparison-box {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .pomodoro-settings-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}

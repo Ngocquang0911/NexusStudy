@@ -24,6 +24,8 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true, select: false },
     avatar: { type: String, default: '' },
     bio: { type: String, default: '', maxlength: 500 },
+    isLocked: { type: Boolean, default: false },
+    tokenVersion: { type: Number, default: 0 },
     systemRole: { type: String, enum: ['STUDENT', 'LECTURER', 'ADMIN'], default: 'STUDENT' },
     subscriptionPlan: { type: String, enum: ['FREE', 'PREMIUM'], default: 'FREE', index: true },
   },

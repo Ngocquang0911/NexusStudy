@@ -1,3 +1,4 @@
+import { readWorkspaceHeader } from '../../utils/workspaceHeaderCache.js'
 import { ArrowLeft, FileText, HardDrive, LoaderCircle, Plus, Search, UploadCloud } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -21,7 +22,7 @@ export default function DocumentsPage() {
 
   const [workspaces, setWorkspaces] = useState([])
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState(workspaceId || '')
-  const [workspace, setWorkspace] = useState(null)
+  const [workspace, setWorkspace] = useState(() => readWorkspaceHeader(workspaceId))
   const [members, setMembers] = useState([])
 
   const [documents, setDocuments] = useState([])
@@ -30,6 +31,7 @@ export default function DocumentsPage() {
 
   // Upload modal states
   const [isUploadOpen, setIsUploadOpen] = useState(false)
+  const [droppedFile, setDroppedFile] = useState(null)
   const [uploadLoading, setUploadLoading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
 
@@ -161,17 +163,17 @@ export default function DocumentsPage() {
   return (
     <div className="document-page-container">
       {/* Workspace Header & Tabs if inside workspace context */}
-      {workspaceId && workspace ? (
+      {workspaceId ? (
         <div className="workspace-detail-header-block">
           <Link className="back-link" to="/workspaces">
             <ArrowLeft size={16} /> All workspaces
           </Link>
           <section className="workspace-hero">
-            <div className="workspace-hero-icon">{workspace.name.slice(0, 1).toUpperCase()}</div>
+            <div className="workspace-hero-icon">{workspace?.avatar ? <img src={workspace.avatar} alt="" /> : workspace?.name?.slice(0, 1).toUpperCase() || '…'}</div>
             <div>
-              <span className="eyebrow">{workspace.type}</span>
-              <h1>{workspace.name}</h1>
-              <p>{workspace.description || 'A focused space for your group to collaborate.'}</p>
+              <span className="eyebrow">{workspace?.type?.replaceAll('_', ' ') || 'WORKSPACE'}</span>
+              <h1>{workspace?.name || 'Loading workspace…'}</h1>
+              <p>{workspace?.description || 'A focused space for your group to collaborate.'}</p>
             </div>
           </section>
 
@@ -214,7 +216,7 @@ export default function DocumentsPage() {
             <button
               type="button"
               className="primary-action"
-              onClick={() => setIsUploadOpen(true)}
+              onClick={() => { setDroppedFile(null); setIsUploadOpen(true) }}
               disabled={!activeWsId}
             >
               <UploadCloud size={16} /> Upload Document
@@ -233,7 +235,7 @@ export default function DocumentsPage() {
           <button
             type="button"
             className="primary-action"
-            onClick={() => setIsUploadOpen(true)}
+            onClick={() => { setDroppedFile(null); setIsUploadOpen(true) }}
           >
             <UploadCloud size={16} /> Upload Document
           </button>
@@ -306,6 +308,7 @@ export default function DocumentsPage() {
         </div>
       </div>
 
+      {!loading && !error && activeWsId && <div className="document-dropzone" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); const file = event.dataTransfer.files[0]; if (file) { setDroppedFile(file); setIsUploadOpen(true) } }}><span><UploadCloud size={22} /></span><div><strong>Add resources to your workspace</strong><p>Drop a file here or open the upload window to select a file or add a link.</p></div><button type="button" className="secondary-action" onClick={() => { setDroppedFile(null); setIsUploadOpen(true) }}>Add document</button></div>}
       {/* Document Grid Feed */}
       {loading ? (
         <div className="route-loading" style={{ minHeight: '300px' }}>
@@ -324,12 +327,12 @@ export default function DocumentsPage() {
       ) : filteredDocuments.length === 0 ? (
         <div className="workspace-empty surface-card">
           <FileText size={40} />
-          <h2>No documents found</h2>
-          <p>Upload files to start building your workspace resource library.</p>
+          <h2>{documents.length ? 'No matching documents' : 'No documents yet'}</h2>
+          <p>{documents.length ? 'Try a different search or filter.' : 'Upload files to start building your workspace resource library.'}</p>
           <button
             type="button"
             className="primary-action margin-top-md"
-            onClick={() => setIsUploadOpen(true)}
+            onClick={() => { setDroppedFile(null); setIsUploadOpen(true) }}
           >
             <UploadCloud size={16} /> Upload First File
           </button>
@@ -350,7 +353,9 @@ export default function DocumentsPage() {
 
       {/* Upload Modal */}
       <UploadDocumentModal
+        key={isUploadOpen ? 'open' : 'closed'}
         isOpen={isUploadOpen}
+        initialFile={droppedFile}
         onClose={() => setIsUploadOpen(false)}
         onUpload={handleUploadSubmit}
         onUploadLink={handleUploadLinkSubmit}

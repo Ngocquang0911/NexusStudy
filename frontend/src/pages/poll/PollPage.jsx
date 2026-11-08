@@ -1,3 +1,4 @@
+import { readWorkspaceHeader } from '../../utils/workspaceHeaderCache.js'
 import { ArrowLeft, CheckCircle2, Clock, LoaderCircle, Plus, Vote } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -20,7 +21,7 @@ export default function PollPage() {
 
   const [workspaces, setWorkspaces] = useState([])
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState(paramWorkspaceId || '')
-  const [workspace, setWorkspace] = useState(null)
+  const [workspace, setWorkspace] = useState(() => readWorkspaceHeader(paramWorkspaceId))
   const [members, setMembers] = useState([])
 
   const [polls, setPolls] = useState([])
@@ -141,17 +142,17 @@ export default function PollPage() {
   return (
     <div className="poll-page-container">
       {/* Workspace Header & Tabs if inside workspace context */}
-      {paramWorkspaceId && workspace ? (
+      {paramWorkspaceId ? (
         <div className="workspace-detail-header-block">
           <Link className="back-link" to="/workspaces">
             <ArrowLeft size={16} /> All workspaces
           </Link>
           <section className="workspace-hero">
-            <div className="workspace-hero-icon">{workspace.name.slice(0, 1).toUpperCase()}</div>
+            <div className="workspace-hero-icon">{workspace?.avatar ? <img src={workspace.avatar} alt="" /> : workspace?.name?.slice(0, 1).toUpperCase() || '…'}</div>
             <div>
-              <span className="eyebrow">{workspace.type}</span>
-              <h1>{workspace.name}</h1>
-              <p>{workspace.description || 'A focused space for your group to collaborate.'}</p>
+              <span className="eyebrow">{workspace?.type?.replaceAll('_', ' ') || 'WORKSPACE'}</span>
+              <h1>{workspace?.name || 'Loading workspace…'}</h1>
+              <p>{workspace?.description || 'A focused space for your group to collaborate.'}</p>
             </div>
           </section>
 

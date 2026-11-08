@@ -2,7 +2,7 @@ import mongoose from 'mongoose'
 import { Channel } from './Channel.js'
 import { Message } from './Message.js'
 import { WorkspaceMember } from '../workspaces/WorkspaceMember.js'
-import { assertPremiumWorkspace, getWorkspacePlan, PLAN_LIMITS } from '../plans/plan.service.js'
+import { getWorkspacePlan, PLAN_LIMITS } from '../plans/plan.service.js'
 
 function serviceError(message, statusCode) {
   const error = new Error(message)
@@ -19,8 +19,26 @@ export async function listChannels(workspaceId, userId) {
   return Channel.find(filter).populate('createdBy', 'name email').sort({ createdAt: 1 })
 }
 
+export async function getOrCreateDirectChannel(workspaceId, userId, targetId) {
+  if (!mongoose.isValidObjectId(targetId) || String(userId) === String(targetId)) throw serviceError('Choose another workspace member', 400)
+  const target = await WorkspaceMember.findOne({ workspaceId, userId: targetId })
+  if (!target) throw serviceError('User must be a member of this workspace', 403)
+  const pair = [String(userId), String(targetId)].sort()
+  const directKey = pair.join(':')
+  const filter = { workspaceId, directKey }
+  const data = { workspaceId, directKey, name: `dm-${pair.join('-')}`, isPrivate: true, allowedMembers: pair, createdBy: userId }
+  try {
+    return await Channel.findOneAndUpdate(filter, { $setOnInsert: data }, { upsert: true, new: true, setDefaultsOnInsert: true })
+  } catch (error) {
+    if (error.code === 11000) { const existing = await Channel.findOne(filter); if (existing) return existing }
+    throw error
+  }
+}
+
 export async function createChannel(workspaceId, userId, payload) {
-  await assertPremiumWorkspace(workspaceId, 'Creating additional channels requires the workspace owner to have a Premium plan')
+  const name = typeof payload.name === 'string' ? payload.name.trim().toLowerCase() : ''
+  if (!/^[a-z0-9_-]{1,80}$/.test(name) || name.startsWith('dm-')) throw serviceError('Channel name must contain letters, numbers, hyphens or underscores and cannot start with dm-', 400)
+  if (typeof payload.description !== 'undefined' && (typeof payload.description !== 'string' || payload.description.length > 300)) throw serviceError('Channel description must be at most 300 characters', 400)
   const selectedMembers = payload.allowedMembers ?? []
   if (!Array.isArray(selectedMembers) || selectedMembers.some((id) => !mongoose.isValidObjectId(id))) {
     throw serviceError('Private channel members must be valid workspace user ids', 400)
@@ -35,17 +53,23 @@ export async function createChannel(workspaceId, userId, payload) {
       throw serviceError('All private channel members must belong to this workspace', 400)
     }
   }
-  return Channel.create({
+  try {
+    return await Channel.create({
     workspaceId,
-    name: payload.name,
+    name,
     description: payload.description || '',
     createdBy: userId,
     isPrivate: Boolean(payload.isPrivate),
     allowedMembers: payload.isPrivate ? requestedMembers : [],
-  })
+    })
+  } catch (error) {
+    if (error.code === 11000) throw serviceError('A channel with this name already exists', 409)
+    throw error
+  }
 }
 
 export async function updateChannel(channel, member, payload) {
+  if (channel.directKey) throw serviceError('Direct conversations cannot be modified as channels', 403)
   if (!canModerate(member) && !channel.createdBy.equals(member.userId)) {
     throw serviceError('Only the channel creator or workspace leader can update this channel', 403)
   }
@@ -56,6 +80,7 @@ export async function updateChannel(channel, member, payload) {
 }
 
 export async function deleteChannel(channel, member) {
+  if (channel.directKey) throw serviceError('Direct conversations cannot be deleted as channels', 403)
   if (!canModerate(member)) throw serviceError('Only workspace leaders can delete channels', 403)
   await Message.updateMany({ channelId: channel._id, deletedAt: null }, { deletedAt: new Date(), content: '[Channel deleted]' })
   await channel.deleteOne()

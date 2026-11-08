@@ -85,9 +85,9 @@ export default function WorkspaceListPage() {
 
       <section className="surface-card workspace-invitations">
         <div className="section-heading">
-          <div><span className="eyebrow">PENDING RESPONSE</span><h2>Invitations</h2></div>
+          <div><span className="eyebrow">YOUR INBOX</span><h2>Invitations <span className="workspace-invitation-count">{invitations.length}</span></h2></div>
         </div>
-        {!invitations.length ? <p className="muted-copy">No invitations to review.</p> : (
+        {!invitations.length ? <p className="muted-copy">You’re all caught up. New invitations will appear here.</p> : (
           <div className="member-list">
             {invitations.map((invitation) => (
               <div className="member-row" key={invitation._id}>
@@ -122,18 +122,19 @@ export default function WorkspaceListPage() {
           </div>
         </div>
       ) : (
-        <div className="workspace-grid">
+        <section className="workspace-collection"><div className="workspace-collection-heading"><div><span className="eyebrow">YOUR SPACES</span><h2>Continue collaborating</h2><p>Open a workspace to pick up where your team left off.</p></div><span>{workspaces.length} {workspaces.length === 1 ? 'workspace' : 'workspaces'}</span></div><div className="workspace-grid">
           {workspaces.map((workspace) => (
             <button className="workspace-card" key={workspace._id} onClick={() => navigate(`/workspaces/${workspace._id}`)}>
-              <span className="workspace-card-icon">{workspace.name.slice(0, 1).toUpperCase()}</span>
+              <span className="workspace-card-icon">{workspace.avatar ? <img src={workspace.avatar} alt="" /> : workspace.name.slice(0, 1).toUpperCase()}</span>
               <span className="workspace-card-content">
                 <strong>{workspace.name}</strong>
-                <small>{workspace.type} · {workspace.role}</small>
+                <small>{(workspace.type || 'Workspace').replaceAll('_', ' ')} · {workspace.role}</small>
                 <span><Users size={14} /> Open workspace</span>
               </span>
             </button>
           ))}
-        </div>
+          <button type="button" className="workspace-create-tile" onClick={() => setModalOpen(true)}><Plus size={22} /><strong>Create a workspace</strong><span>Start a new space for your team</span></button>
+        </div></section>
       )}
 
       {modalOpen && (

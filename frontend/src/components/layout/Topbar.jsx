@@ -6,12 +6,15 @@ import {
   CheckSquare,
   ChevronDown,
   ChevronRight,
+  Clock,
   FileText,
   FolderKanban,
   KeyRound,
   LayoutDashboard,
   LogOut,
   Menu,
+  Moon,
+  Sun,
   MessageSquare,
   Plus,
   Search,
@@ -44,7 +47,7 @@ const PAGE_META = {
   '/deleted-spaces': { label: 'Deleted Spaces Archive', icon: Archive },
 }
 
-export default function Topbar({ onMenu }) {
+export default function Topbar({ onMenu, onTogglePomodoro, pomodoroOpen = false, theme = 'light', onToggleTheme }) {
   const { user, logout } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
@@ -140,7 +143,7 @@ export default function Topbar({ onMenu }) {
     { label: 'Administration Console', desc: 'System overview, metrics, and server stats', to: '/admin', icon: ShieldCheck, tag: 'Admin' },
     { label: 'User & Role Management', desc: 'Manage system roles and upgrade subscription plans', to: '/admin', icon: Users, tag: 'Admin' },
     { label: 'Workspace Oversight', desc: 'Inspect active and soft-deleted spaces', to: '/workspaces', icon: FolderKanban, tag: 'Admin' },
-    { label: 'Deleted Spaces Archive', desc: 'Manage data retention and 5-day purge schedules', to: '/deleted-spaces', icon: Archive, tag: 'Admin' },
+    { label: 'Deleted Spaces Archive', desc: 'View archived spaces and retention deadlines', to: '/deleted-spaces', icon: Archive, tag: 'Admin' },
     { label: 'Admin Account Profile', desc: 'Manage personal details and credentials', to: '/profile', icon: UserRound, tag: 'Account' },
     { label: 'Change Admin Password', desc: 'Update system security credentials', to: '/profile?tab=PASSWORD', icon: KeyRound, tag: 'Security' },
   ]
@@ -219,6 +222,21 @@ export default function Topbar({ onMenu }) {
 
         {/* Right: Quick Actions, Live Status, Notifications, Account Menu */}
         <div className="topbar-actions">
+          {!isAdmin && onToggleTheme && <button type="button" className="topbar-theme-toggle" onClick={onToggleTheme} aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>{theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}<span>{theme === 'dark' ? 'Light' : 'Dark'}</span></button>}
+          {!isAdmin && (
+            <button
+              type="button"
+              className="topbar-pomodoro-btn"
+              onClick={onTogglePomodoro}
+              aria-label="Toggle Pomodoro timer"
+              aria-expanded={pomodoroOpen}
+              aria-controls="pomodoro"
+            >
+              <Clock size={16} />
+              <span>Pomodoro</span>
+            </button>
+          )}
+
           {/* Quick Action Button: Distinct for Admin vs User */}
           <div className="topbar-quick-create" ref={quickCreateRef}>
             <button
@@ -380,6 +398,9 @@ export default function Topbar({ onMenu }) {
                   <KeyRound size={16} /> Change password
                 </Link>
 
+                {onToggleTheme && <button type="button" role="menuitem" onClick={onToggleTheme} aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+                  {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />} {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+                </button>}
                 <div className="account-menu-divider" />
 
                 <button type="button" role="menuitem" onClick={logout} className="logout-button">
