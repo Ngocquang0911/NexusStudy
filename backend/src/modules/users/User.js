@@ -28,6 +28,7 @@ const userSchema = new mongoose.Schema(
     tokenVersion: { type: Number, default: 0 },
     systemRole: { type: String, enum: ['STUDENT', 'LECTURER', 'ADMIN'], default: 'STUDENT' },
     subscriptionPlan: { type: String, enum: ['FREE', 'PREMIUM'], default: 'FREE', index: true },
+    subscriptionExpiresAt: { type: Date, default: null },
   },
   { timestamps: true },
 )

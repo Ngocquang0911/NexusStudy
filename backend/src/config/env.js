@@ -30,4 +30,8 @@ export const env = {
   smtpUser: process.env.SMTP_USER || '',
   smtpPassword: process.env.SMTP_PASSWORD || '',
   smtpFrom: process.env.SMTP_FROM || process.env.SMTP_USER || '',
+  payosClientId: process.env.PAYOS_CLIENT_ID || '',
+  payosApiKey: process.env.PAYOS_API_KEY || '',
+  payosChecksumKey: process.env.PAYOS_CHECKSUM_KEY || '',
+  payosApiUrl: process.env.PAYOS_API_URL || 'https://api-merchant.payos.vn',
 }
