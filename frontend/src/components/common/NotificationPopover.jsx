@@ -94,6 +94,11 @@ export default function NotificationPopover({ isOpen, onClose }) {
       onClose()
       return
     }
+    if (notification.type === 'APPOINTMENT_REMINDER') {
+      navigate('/calendar')
+      onClose()
+      return
+    }
     if (notification.workspaceId && notification.taskId) {
       navigate(`/workspaces/${notification.workspaceId}/tasks?taskId=${notification.taskId}`)
       onClose()
@@ -104,6 +109,7 @@ export default function NotificationPopover({ isOpen, onClose }) {
     switch (type) {
       case 'TASK_ASSIGNED':
       case 'TASK_DEADLINE':
+      case 'APPOINTMENT_REMINDER':
         return <Clock size={15} className="notif-icon task" />
       case 'NEW_MESSAGE':
       case 'TASK_FEEDBACK':
@@ -148,8 +154,8 @@ export default function NotificationPopover({ isOpen, onClose }) {
           <div
             key={notification._id}
             className={`notif-item ${!notification.readAt ? 'unread' : ''}`}
-            role={notification.type === 'WORKSPACE_DELETED' || (notification.workspaceId && notification.taskId) ? 'button' : undefined}
-            tabIndex={notification.type === 'WORKSPACE_DELETED' || (notification.workspaceId && notification.taskId) ? 0 : undefined}
+            role={notification.type === 'WORKSPACE_DELETED' || notification.type === 'APPOINTMENT_REMINDER' || (notification.workspaceId && notification.taskId) ? 'button' : undefined}
+            tabIndex={notification.type === 'WORKSPACE_DELETED' || notification.type === 'APPOINTMENT_REMINDER' || (notification.workspaceId && notification.taskId) ? 0 : undefined}
             onClick={() => openNotification(notification)}
             onKeyDown={(event) => {
               if (event.key === 'Enter' || event.key === ' ') {

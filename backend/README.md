@@ -175,6 +175,8 @@ Task statuses are `TODO`, `IN_PROGRESS`, `CANCELLED`, `REVIEW`, and `DONE`; `OVE
 
 Tasks with a deadline receive three automatic reminders. Premium workspace leaders can replace that schedule with up to 50 custom reminder times using `PUT /api/tasks/:id/reminders`. Reminders create in-app notifications; email delivery requires the SMTP settings described above.
 
+Calendar appointments are workspace-scoped records, separate from task deadlines. Members can create appointments, select workspace members to remind, and receive three scheduled in-app reminders and email reminders before the start time. The creator and workspace leaders can edit or cancel an appointment. Email is sent from `SMTP_FROM` (or `SMTP_USER`) to each selected member's account email; successful delivery depends on valid SMTP credentials.
+
 ## Phase 5 chat endpoints
 
 - `GET /api/workspaces/:workspaceId/channels`

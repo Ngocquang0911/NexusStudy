@@ -7,6 +7,7 @@ import { WorkspaceInvitation } from './WorkspaceInvitation.js'
 import { getUserPlan, getWorkspaceEntitlements, PLAN_LIMITS } from '../plans/plan.service.js'
 import { validateWorkspaceUpdate } from './workspace.validation.js'
 import { Notification } from '../notifications/Notification.js'
+import { Appointment } from '../appointments/Appointment.js'
 import { createInvitationNotification } from '../notifications/notification.service.js'
 import { AdminAuditLog } from '../admin/AdminAuditLog.js'
 import { notifyDeletedWorkspaceMembers } from './workspace.archive.service.js'
@@ -143,6 +144,7 @@ export async function deleteWorkspace(workspaceId, ownerId, now = new Date(), { 
       { $set: { status: 'CANCELLED', cancelledAt: now } },
     )],
     ['workspace notifications', () => Notification.deleteMany({ workspaceId })],
+    ['workspace appointments', () => Appointment.deleteMany({ workspaceId })],
     ['deleted Space notices', () => notifyDeletedWorkspaceMembers(workspace, now)],
   ]
   for (const [operation, cleanup] of cleanupOperations) {

@@ -6,6 +6,7 @@ import { Message } from '../chat/Message.js'
 import { Document } from '../documents/Document.js'
 import { Evaluation } from '../evaluations/Evaluation.js'
 import { Notification } from '../notifications/Notification.js'
+import { Appointment } from '../appointments/Appointment.js'
 import { Poll } from '../polls/Poll.js'
 import { Task } from '../tasks/Task.js'
 import { Workspace } from './Workspace.js'
@@ -193,6 +194,7 @@ export async function purgeWorkspaceData(workspaceId) {
   await Evaluation.deleteMany({ workspaceId })
   await WorkspaceInvitation.deleteMany({ workspaceId })
   await Notification.deleteMany({ workspaceId })
+  await Appointment.deleteMany({ workspaceId })
   await Channel.deleteMany({ workspaceId })
 
   for (const document of documents) {

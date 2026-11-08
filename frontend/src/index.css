@@ -648,6 +648,8 @@ a { color: inherit; text-decoration: none; }
 
 .calendar-dates-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 6px; }
 .calendar-date-cell { min-height: 74px; border: 1px solid var(--line); border-radius: 6px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; transition: all 0.15s; background: #fff; }
+.calendar-date-cell { width: 100%; text-align: left; font: inherit; color: inherit; }
+.calendar-date-cell:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
 .calendar-date-cell:hover:not(.empty) { border-color: var(--indigo); background: #f8fafc; }
 .calendar-date-cell.empty { border: none; background: transparent; cursor: default; }
 .calendar-date-cell.today { border-color: var(--indigo); background: var(--indigo-soft); }
@@ -679,6 +681,15 @@ a { color: inherit; text-decoration: none; }
 .agenda-task-title { font: 600 13px 'Space Grotesk', sans-serif; margin: 0; color: var(--ink); }
 .agenda-task-bottom { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--muted); }
 .task-progress-num { font-weight: 600; color: var(--indigo); }
+.appointment-attendees { max-height: 150px; overflow-y: auto; border: 1px solid var(--line); padding: 7px 10px; margin-top: 8px; }
+.workspace-modal .appointment-attendees label { display: flex; align-items: center; gap: 8px; margin: 0; padding: 5px 0; }
+.workspace-modal .appointment-attendees input { display: inline-block; width: auto; margin: 0; }
+.workspace-modal fieldset { border: 1px solid var(--line); margin-top: 14px; padding: 10px; }
+.workspace-modal fieldset legend, .workspace-modal fieldset small { color: var(--muted); font-size: 10px; }
+.workspace-modal .modal-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px; }
+.workspace-modal .modal-header h2 { font: 600 21px 'Space Grotesk'; margin: 3px 0 0; }
+.agenda-task-item { color: inherit; text-decoration: none; }
+.text-action { display: inline-flex; align-items: center; gap: 3px; border: 0; padding: 0; background: transparent; color: var(--indigo); font-size: 11px; cursor: pointer; }
 
 /* NOTIFICATIONS POPOVER STYLING */
 .notification-popover-menu { position: absolute; right: 0; top: 32px; z-index: 50; width: 340px; background: #fff; border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 12px 36px rgba(0,0,0,0.14); display: flex; flex-direction: column; overflow: hidden; }
