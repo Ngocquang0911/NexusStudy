@@ -5,6 +5,7 @@ const schema = new mongoose.Schema({
   priceVnd: { type: Number, required: true },
   status: { type: String, enum: ['PENDING', 'PENDING_PAYMENT', 'PAID', 'FAILED', 'CANCELLED', 'REVIEWED'], default: 'PENDING' },
   transactionRef: { type: String, default: undefined },
+  provider: { type: String, default: null },
   paymentUrl: { type: String, default: null },
   paymentLinkId: { type: String, default: null },
   paidAt: { type: Date, default: null },
@@ -15,4 +16,5 @@ const schema = new mongoose.Schema({
 }, { timestamps: true })
 schema.index({ userId: 1, status: 1 }, { unique: true, partialFilterExpression: { status: { $in: ['PENDING', 'PENDING_PAYMENT'] } } })
 schema.index({ transactionRef: 1 }, { unique: true, sparse: true })
+schema.index({ gatewayTransactionNo: 1 }, { unique: true, partialFilterExpression: { gatewayTransactionNo: { $type: 'string' } } })
 export const PremiumRequest = mongoose.model('PremiumRequest', schema)

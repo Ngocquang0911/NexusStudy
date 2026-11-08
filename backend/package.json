@@ -22,6 +22,7 @@
     "nodemailer": "^7.0.3",
     "openai": "^4.77.0",
     "pdf-parse": "^2.4.5",
+    "sepay-pg-node": "^1.0.0",
     "socket.io": "^4.8.1",
     "word-extractor": "^1.0.4"
   },

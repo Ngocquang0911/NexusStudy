@@ -17,6 +17,7 @@ if (!jwtSecret || jwtSecret === 'replace-this-in-local-development') {
 export const env = {
   port: Number(process.env.PORT || 5000),
   mongoUri: requireEnvironment('MONGODB_URI', 'mongodb://127.0.0.1:27017/nexus_study'),
+  mongoDnsServers: process.env.MONGODB_DNS_SERVERS || '',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
   jwtSecret,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
@@ -30,8 +31,8 @@ export const env = {
   smtpUser: process.env.SMTP_USER || '',
   smtpPassword: process.env.SMTP_PASSWORD || '',
   smtpFrom: process.env.SMTP_FROM || process.env.SMTP_USER || '',
-  payosClientId: process.env.PAYOS_CLIENT_ID || '',
-  payosApiKey: process.env.PAYOS_API_KEY || '',
-  payosChecksumKey: process.env.PAYOS_CHECKSUM_KEY || '',
-  payosApiUrl: process.env.PAYOS_API_URL || 'https://api-merchant.payos.vn',
+  sepayEnv: process.env.SEPAY_ENV || 'sandbox',
+  sepayMerchantId: process.env.SEPAY_MERCHANT_ID || '',
+  sepaySecretKey: process.env.SEPAY_SECRET_KEY || '',
+  sepayIpnSecret: process.env.SEPAY_IPN_SECRET || '',
 }
