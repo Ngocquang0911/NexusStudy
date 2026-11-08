@@ -302,7 +302,7 @@ export async function updateSubscriptionPlan(userId, plan, actorId, reason) {
     error.statusCode = 404
     throw error
   }
-  const user = await User.findById(userId).select('name email systemRole subscriptionPlan createdAt updatedAt')
+  const user = await User.findById(userId).select('name email systemRole subscriptionPlan subscriptionExpiresAt createdAt updatedAt')
   if (!user) {
     const error = new Error('User not found')
     error.statusCode = 404
@@ -311,6 +311,7 @@ export async function updateSubscriptionPlan(userId, plan, actorId, reason) {
   const previousPlan = user.subscriptionPlan
   if (previousPlan === plan) return user
   user.subscriptionPlan = plan
+  user.subscriptionExpiresAt = null
   await user.save()
   await AdminAuditLog.create({
     actorId,

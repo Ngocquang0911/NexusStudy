@@ -228,7 +228,7 @@ Evaluation submissions include `evaluatedUserId`, `criteria`, and an optional `c
 
 ## Plans
 
-New accounts use the Free plan. Administrators assign or remove Premium access through the admin user-management page; billing is not integrated. Free accounts can create or join up to three workspaces, pin four messages per workspace, and retain files for 90 days. Premium accounts can join unlimited workspaces, pin up to 50 messages per workspace, retain files for 365 days, configure reminder schedules, and access contribution reports.
+New accounts use the Free plan. Users can purchase Premium for 39,000 VND/month, 150,000 VND/6 months, or 289,000 VND/year through PayOS. Set `PAYOS_CLIENT_ID`, `PAYOS_API_KEY`, and `PAYOS_CHECKSUM_KEY` from a PayOS payment channel. The backend creates payment links with the PayOS v2 API and verifies webhook signatures, order codes, amounts, and currency before activating Premium. Configure the payment channel webhook URL as `https://your-api-domain/api/premium/payment/webhook`; PayOS requires a publicly reachable HTTPS endpoint for webhook delivery. The frontend return and cancel URLs come from `CLIENT_URL`. Premium expires at the end of its purchased term, and additional purchases extend an active term. Administrators can still manually assign or remove Premium access through the admin user-management page. Free accounts can create or join up to three workspaces, pin four messages per workspace, and retain files for 90 days. Premium accounts can join unlimited workspaces, pin up to 50 messages per workspace, retain files for 365 days, configure reminder schedules, and access contribution reports.
 
 ## System administration
 

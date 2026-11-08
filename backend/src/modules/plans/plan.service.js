@@ -17,8 +17,10 @@ export const PLAN_LIMITS = {
 }
 
 export async function getUserPlan(userId) {
-  const user = await User.findById(userId).select('subscriptionPlan')
-  return user?.subscriptionPlan || 'FREE'
+  const user = await User.findById(userId).select('subscriptionPlan subscriptionExpiresAt')
+  if (!user || user.subscriptionPlan !== 'PREMIUM') return 'FREE'
+  if (user.subscriptionExpiresAt && user.subscriptionExpiresAt <= new Date()) return 'FREE'
+  return 'PREMIUM'
 }
 
 export async function getWorkspacePlan(workspaceId) {
