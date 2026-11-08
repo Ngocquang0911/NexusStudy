@@ -1,5 +1,5 @@
 import crypto from 'node:crypto'
-import { open, unlink } from 'node:fs/promises'
+import { mkdir, open, unlink } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import multer from 'multer'
@@ -35,7 +35,10 @@ async function verifyUploadedFile(file) {
 }
 
 const storage = multer.diskStorage({
-  destination: (_request, _file, callback) => callback(null, fileURLToPath(new URL('../../uploads/', import.meta.url))),
+  destination: (_request, _file, callback) => {
+    const directory = fileURLToPath(new URL('../../uploads/', import.meta.url))
+    mkdir(directory, { recursive: true }).then(() => callback(null, directory), callback)
+  },
   filename: (_request, file, callback) => {
     const extension = path.extname(file.originalname).toLowerCase()
     callback(null, `${crypto.randomUUID()}${extension}`)

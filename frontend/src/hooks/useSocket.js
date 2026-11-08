@@ -15,7 +15,8 @@ export default function useSocket(token) {
       return undefined
     }
 
-    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000'
+    const apiUrl = import.meta.env.VITE_API_URL
+    const socketUrl = import.meta.env.VITE_SOCKET_URL || (apiUrl && /^https?:\/\//i.test(apiUrl) ? new URL(apiUrl).origin : import.meta.env.DEV ? 'http://localhost:5000' : window.location.origin)
 
     const socket = io(socketUrl, {
       auth: { token },

@@ -13,7 +13,6 @@ const schema = new mongoose.Schema({
   reviewedAt: { type: Date, default: null },
   reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
 }, { timestamps: true })
-schema.index({ userId: 1 }, { unique: true, partialFilterExpression: { status: 'PENDING' } })
-schema.index({ userId: 1 }, { unique: true, partialFilterExpression: { status: 'PENDING_PAYMENT' } })
+schema.index({ userId: 1, status: 1 }, { unique: true, partialFilterExpression: { status: { $in: ['PENDING', 'PENDING_PAYMENT'] } } })
 schema.index({ transactionRef: 1 }, { unique: true, sparse: true })
 export const PremiumRequest = mongoose.model('PremiumRequest', schema)
